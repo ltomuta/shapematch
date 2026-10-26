@@ -108,6 +108,11 @@ def create_app(library=None, token=None, port=8000):
     def state():
         return library.state()
 
+    @app.post("/api/workers")
+    def configure_workers(data: dict):
+        library.supervisor.configure(data.get("workers"))
+        return library.state()
+
     @app.get("/api/filesystem")
     def navigate(path: str = "", offset: int = 0, limit: int = 200, allow_file: bool = False):
         return filesystem(path, max(0, offset), min(200, max(1, limit)), allow_file)

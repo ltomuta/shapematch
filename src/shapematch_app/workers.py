@@ -85,14 +85,32 @@ class Supervisor:
             raise ValueError("Workers and timeout must be positive")
         self.workers = min(workers, os.cpu_count() or 1)
         self.timeout = timeout
-        self.slots = threading.Semaphore(self.workers)
+        self.condition = threading.Condition()
+        self.active = {}
         self.context = mp.get_context("spawn")
+
+    def configure(self, workers):
+        if type(workers) is not int or not 1 <= workers <= (os.cpu_count() or 1):
+            raise ValueError(f"Workers must be between 1 and {os.cpu_count() or 1}")
+        with self.condition:
+            self.workers = workers
+            self.condition.notify_all()
+
+    def progress(self):
+        with self.condition:
+            return [{**item, "elapsed": time.monotonic() - item["started"]}
+                    for item in self.active.values()]
 
     def run(self, operation, data, cancel=None):
         cancel = cancel or threading.Event()
-        while not self.slots.acquire(timeout=.05):
-            if cancel.is_set():
-                raise WorkerError("Cancelled")
+        ticket = object()
+        with self.condition:
+            while len(self.active) >= self.workers:
+                if cancel.is_set():
+                    raise WorkerError("Cancelled")
+                self.condition.wait(.05)
+            self.active[ticket] = {"path": data.get("path", ""), "operation": operation,
+                                   "started": time.monotonic()}
         parent, child = self.context.Pipe(duplex=False)
         process = self.context.Process(target=_entry, args=(child, operation, data), daemon=True)
         try:
@@ -126,4 +144,6 @@ class Supervisor:
                     process.join()
             parent.close()
             child.close()
-            self.slots.release()
+            with self.condition:
+                self.active.pop(ticket, None)
+                self.condition.notify_all()

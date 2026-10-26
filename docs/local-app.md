@@ -61,8 +61,14 @@ shapematch app --data-dir /path/to/local/cache
 ```
 
 Keep `--data-dir` on local storage, outside the scanned folder. The default
-worker count is two, capped by available CPUs. Only one scan or search runs at a
-time; browsing remains available. Workers use `spawn` on every platform and
+worker count is two, capped by available CPUs. The **CAD workers** control
+changes the limit during a running job;
+increases start additional tasks and decreases let existing tasks finish.
+Progress shows discovery, hashing and extraction phases, elapsed time, average
+files per minute (including cache hits and failures), and active filenames with
+their running times. The first scan must hash all files before extraction starts.
+Only one scan or search runs at a time; browsing remains available.
+Workers use `spawn` on every platform and
 exchange paths/JSON-compatible data, never CAD handles. Each task gets a disposable
 process, so native crashes and timeouts do not poison subsequent tasks. Previews
 share the same worker limit. Cancellation stops active worker tasks, preserves

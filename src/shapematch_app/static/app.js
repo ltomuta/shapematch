@@ -15,6 +15,7 @@ let selectedQuery = "",
   preview = null,
   previewSequence = 0,
   lastJob = "",
+  workersDirty = false,
   timer;
 async function api(path, body) {
   const response = await fetch("/api/" + path, {
@@ -165,6 +166,11 @@ async function refresh() {
       .map(([k, v]) => `${v} ${k}`)
       .join(" · ");
     const job = state.job;
+    $("workers").max = state.max_workers;
+    if (!workersDirty) $("workers").value = state.workers;
+    $("active-workers").textContent = (state.active_workers || []).map(
+      (item) => `${item.operation} · ${Math.floor(item.elapsed)}s · ${item.path}`,
+    ).join("\n");
     const running = job && job.status === "running";
     for (const id of ["folder", "rescan", "search"])
       $(id).disabled = !!running || (!state.library && id !== "folder");
@@ -172,6 +178,10 @@ async function refresh() {
     if (job) {
       $("progress").textContent =
         `${job.kind}: ${job.status} · ${job.completed}/${job.total} ${job.kind === "search" ? "checked / shortlisted" : ""}${job.eligible !== undefined ? " · " + job.eligible + " eligible" : ""}\n${job.coverage}`;
+      const elapsed = Math.max(0, (job.finished || Date.now() / 1000) - job.started);
+      const rate = elapsed > 0 ? job.completed * 60 / elapsed : 0;
+      $("progress").textContent += ` · ${job.phase || job.kind} · ${Math.floor(elapsed / 60)}m ${Math.floor(elapsed % 60)}s elapsed · ${rate.toFixed(1)} files/min · ${(state.active_workers || []).length}/${state.workers} workers active`;
+      if (job.phase === "hashing") $("progress").textContent += ` · ${job.hashed || 0}/${job.total} hashed`;
       $("meter").max = Math.max(job.total, 1);
       $("meter").value = job.completed;
       $("errors").textContent =
@@ -323,6 +333,12 @@ $("search").onclick = () => {
   }).catch(error);
 };
 $("cancel").onclick = () => api("cancel", {}).catch(error);
+$("workers").oninput = () => { workersDirty = true; };
+$("apply-workers").onclick = () => api("workers", { workers: Number($("workers").value) }).then(() => {
+  workersDirty = false;
+  clearTimeout(timer);
+  return refresh();
+}).catch(error);
 for (const id of ["source-visible", "target-visible", "placement"])
   $(id).onchange = () => renderPreview().catch(error);
 for (const id of ["source-opacity", "target-opacity"])

@@ -23,7 +23,12 @@
           ><button id="cancel">Cancel job</button>
         </div>
         <p id="counts"></p>
+        <div class="row">
+          <label>CAD workers <input id="workers" type="number" min="1" value="2" /></label>
+          <button id="apply-workers">Apply worker count</button>
+        </div>
         <p id="progress" role="status" aria-live="polite"></p>
+        <pre id="active-workers"></pre>
         <progress id="meter" max="1" value="0"></progress>
         <details>
           <summary>Job errors</summary>

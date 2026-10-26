@@ -229,6 +229,59 @@ def test_api_filesystem_session_and_jobs(catalog):
         assert client.get("/api/files", params={"text": "hello"}).json()["total"] == 1
 
 
+def test_running_scheduler_increases_concurrency(catalog, monkeypatch):
+    library, _, worker = catalog
+    monkeypatch.setattr(lib.os, "cpu_count", lambda: 6)
+    worker.workers = 2
+    entered = []
+    lock = threading.Lock()
+    release = threading.Event()
+
+    def operation(item):
+        with lock:
+            entered.append(item)
+        assert release.wait(5)
+        return item
+
+    results = []
+    thread = threading.Thread(target=lambda: results.extend(library._parallel(range(8), operation)))
+    thread.start()
+    try:
+        deadline = time.monotonic() + 3
+        while len(entered) < 2 and time.monotonic() < deadline:
+            time.sleep(.01)
+        assert len(entered) == 2
+        worker.workers = 6
+        deadline = time.monotonic() + 3
+        while len(entered) < 6 and time.monotonic() < deadline:
+            time.sleep(.01)
+        assert len(entered) == 6  # No original task had to finish first.
+    finally:
+        release.set()
+        thread.join(5)
+    assert not thread.is_alive()
+    assert sorted(item for item, result, error in results if error is None) == list(range(8))
+
+
+def test_worker_api_validates_limits_and_reports_state(catalog, monkeypatch):
+    from fastapi.testclient import TestClient
+    from shapematch_app.server import create_app
+    from shapematch_app.workers import Supervisor
+    library, _, _ = catalog
+    monkeypatch.setattr(lib.os, "cpu_count", lambda: 8)
+    library.supervisor = Supervisor(2)
+    with TestClient(create_app(library, token="workers", port=8123),
+                    base_url="http://127.0.0.1:8123") as client:
+        assert client.post("/api/workers", json={"workers": 6}).status_code == 403
+        client.headers["X-ShapeMatch-Session"] = "workers"
+        state = client.post("/api/workers", json={"workers": 6}).json()
+        assert state["workers"] == 6
+        assert state["max_workers"] == 8
+        assert state["active_workers"] == []
+        for invalid in (0, 9, True, 1.5, "6", None):
+            assert client.post("/api/workers", json={"workers": invalid}).status_code == 400
+
+
 def test_missing_cache_is_regenerated(catalog):
     library, root, worker = catalog
     (root / "part.step").write_text("one")

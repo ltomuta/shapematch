@@ -153,7 +153,9 @@ class Library:
         job = json.loads(latest[0]) if latest else None
         if job and job["library"] != active:
             job = None
-        return {"library": active, "counts": counts, "job": job}
+        return {"library": active, "counts": counts, "job": job,
+                "workers": self.supervisor.workers, "max_workers": os.cpu_count() or 1,
+                "active_workers": self.supervisor.progress() if hasattr(self.supervisor, "progress") else []}
 
     def job(self, job_id):
         with self.connect() as db:
@@ -236,24 +238,30 @@ class Library:
     def _parallel(self, items, function):
         """Submit at most worker-count tasks, even for a 10,000-entry library."""
         iterator = iter(items)
-        with ThreadPoolExecutor(max_workers=self.supervisor.workers) as pool:
+        with ThreadPoolExecutor(max_workers=os.cpu_count() or 1) as pool:
             pending = {}
             def submit():
                 if not self.cancel_event.is_set():
                     item = next(iterator, None)
                     if item is not None:
                         pending[pool.submit(function, item)] = item
-            for _ in range(self.supervisor.workers):
-                submit()
+            exhausted = False
+            def fill():
+                nonlocal exhausted
+                while not exhausted and not self.cancel_event.is_set() and len(pending) < self.supervisor.workers:
+                    count = len(pending)
+                    submit()
+                    exhausted = len(pending) == count
+            fill()
             while pending:
-                done, _ = wait(pending, return_when=FIRST_COMPLETED)
+                done, _ = wait(pending, timeout=.2, return_when=FIRST_COMPLETED)
                 for future in done:
                     item = pending.pop(future)
                     try:
                         yield item, future.result(), None
                     except Exception as exc:
                         yield item, None, exc
-                    submit()
+                fill()
 
     def _ensure(self, path, digest=None):
         digest = digest or source_hash(path)
@@ -278,6 +286,7 @@ class Library:
             raise
 
     def _scan(self, job):
+        job["phase"] = "discovering"
         root = job["library"]
         discovered = []
         successful = set()
@@ -316,6 +325,9 @@ class Library:
                     except OSError:
                         pass  # Permission failures never establish deletion.
         grouped = {}
+        job["phase"] = "hashing"
+        job["hashed"] = 0
+        self._save_job(job)
         for path in discovered:
             if self.cancel_event.is_set():
                 break
@@ -331,6 +343,9 @@ class Library:
             with self.connect() as db:
                 db.execute("INSERT OR REPLACE INTO files VALUES (?,?,?,?,?,?,NULL,NULL,?,?)",
                            (root, path, relative, canonical(Path(path).parent), digest, EXTRACTION_VERSION, status, error))
+            job["hashed"] += 1
+            if job["hashed"] % 20 == 0:
+                self._save_job(job)
         job["phase"] = "extracting"
         self._save_job(job)
         for (digest, paths), feature, error in self._parallel(grouped.items(), lambda item: self._ensure(item[1][0], item[0])):

@@ -12,6 +12,23 @@ from shapematch_cache import source_hash
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_worker_configuration_and_active_progress(monkeypatch):
+    monkeypatch.setattr(workers.os, "cpu_count", lambda: 8)
+    supervisor = Supervisor(2)
+    supervisor.configure(6)
+    assert supervisor.workers == 6
+    for invalid in (0, 9, True, 2.5, None):
+        with pytest.raises(ValueError, match="Workers"):
+            supervisor.configure(invalid)
+    assert supervisor.workers == 6
+    with supervisor.condition:
+        supervisor.active["test"] = {"path": "part.step", "operation": "extract",
+                                     "started": time.monotonic() - 2}
+    active = supervisor.progress()
+    assert active[0]["path"] == "part.step"
+    assert active[0]["elapsed"] >= 2
+
+
 def controlled_entry(connection, operation, data):
     if operation == "crash":
         os._exit(7)
