@@ -87,22 +87,42 @@ Further details available at,
 
 ## Installation
 
-The standalone headless release runs on Linux x86-64 with Python 3.11 or 3.12.
-It uses Open CASCADE through `cadquery-ocp==8.0.1.1.0`; FreeCAD, Qt, Pivy,
-and a display server are not required. OCP installs native binary wheels and
-brings substantial dependencies, including VTK. Use a Linux distribution
-compatible with its manylinux_2_28 wheels (glibc 2.28 or newer).
+The standalone headless release targets Python 3.11 and 3.12 on Linux x86-64,
+Windows x86-64, and macOS (Intel and Apple Silicon). Use a native 64-bit Python
+installation matching your machine's architecture. FreeCAD, Qt, Pivy, and a
+display server are not required.
+
+It uses `cadquery-ocp==8.0.1.1.0`, whose [binary wheels](https://pypi.org/project/cadquery-ocp/8.0.1.1.0/#files)
+cover these platforms. OCP brings substantial native dependencies, including
+VTK. Linux requires glibc 2.28 or newer. On macOS, use macOS 11 or newer and a
+Python installation compatible with the available dependency wheels; current
+VTK versions can require a newer macOS release. Windows ARM Python is not a
+target; use x86-64 Python. CI is configured to run the suite on Linux, Windows,
+and both Mac architectures; native Windows/macOS validation is pending its
+first successful run.
+
+On Linux and macOS (bash/zsh):
 
 ```bash
 python3 -m venv .venv
-. .venv/bin/activate
+source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install .
 ```
 
-For development, install `python -m pip install -e '.[test]'` and run
-`python -m pytest`. Windows, macOS, and other Python versions are not yet
-validated for this release. Benchmark STEP files stay in the repository;
+On Windows (PowerShell), activation is optional:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install .
+.\.venv\Scripts\python.exe -m shapematch --help
+```
+
+The commands below assume the environment is activated. On Windows you can
+instead replace `shapematch` with `.\.venv\Scripts\python.exe -m shapematch`.
+For development, install `python -m pip install -e ".[test]"` and run
+`python -m pytest`. Benchmark STEP files stay in the repository;
 they are not bundled into the installed wheel.
 
 ## Usage
@@ -111,12 +131,11 @@ Run these commands from the repository checkout after installation:
 
 ```bash
 shapematch --help
-shapematch singlePRtest -I data/primitives -O /tmp/shapematch/features --seed 0
-shapematch multiPRtest -I /tmp/shapematch/features -O /tmp/shapematch/results --seed 0
+shapematch singlePRtest -I data/primitives -O shapematch-output/features --seed 0
+shapematch multiPRtest -I shapematch-output/features -O shapematch-output/results --seed 0
 ```
 
-`python -m shapematch` accepts the same arguments. Without installation, use
-`PYTHONPATH=src python -m shapematch ...`. `multitest` is an alias for
+`python -m shapematch` accepts the same arguments. `multitest` is an alias for
 `multiPRtest`. The default seed is `0`; input discovery is sorted, and random
 model selection tries at most 20 candidates before reporting failure.
 
@@ -126,10 +145,7 @@ from a different STEP source. `-I` searches STEP files recursively. For an
 explicit comparison, supply STEP files or new JSON caches:
 
 ```bash
-shapematch singlePRtest \
-  -sf data/primitives/miscellanea/tetrahedron.scaled.stp \
-  -nf data/primitives/cube/unit_cube.stp \
-  -O /tmp/shapematch/features --seed 0
+shapematch singlePRtest -sf data/primitives/miscellanea/tetrahedron.scaled.stp -nf data/primitives/cube/unit_cube.stp -O shapematch-output/features --seed 0
 ```
 
 Use `-pf` to provide the positive model explicitly. Cache inputs preserve their
@@ -164,14 +180,19 @@ Old dill `.obj` files are not supported. Regenerate them by running
 `singlePRtest` against the original STEP files. New caches contain only
 versioned JSON feature data, transforms, a relative STEP path, and a SHA-256
 source hash. Geometry is rebuilt from the STEP source when loading a cache.
-Move caches and STEP files together while preserving relative paths; missing
-or changed sources require regeneration.
+New source and report/cache references use forward-slash relative paths. Move
+reports, caches, and STEP files together while preserving their layout to share
+between operating systems. Existing Windows relative paths are also accepted.
+On Windows, sources and caches on different drives use absolute references;
+keep them on the same drive when preparing a portable bundle. Older reports
+with absolute cache paths only work while those paths remain valid. Missing or
+changed STEP sources require regeneration.
 
 Interactive HTML overlays are available with the optional plotting dependency:
 
 ```bash
-python -m pip install '.[html]'
-shapematch visualize /tmp/comparison/comparisons.json -o /tmp/comparison/comparison.html
+python -m pip install ".[html]"
+shapematch visualize shapematch-output/features/comparisons.json -o shapematch-output/comparison.html
 ```
 
 Open the HTML file in a WebGL-capable browser. Both meshes and the viewer are

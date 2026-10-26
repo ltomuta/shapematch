@@ -83,7 +83,7 @@ def write_html(source, target, comparison, output, placement="aligned", boolean_
 
 def visualize_result(result_path, output, pair="negative", placement="aligned", boolean_tolerance=0.):
     """Reuse saved caches and fit; old reports without a transform are refitted once."""
-    from shapematch_cache import load_model
+    from shapematch_cache import load_model, resolve_stored_path
     from shapematch_workflows import compare
     result_path = Path(result_path).resolve()
     try:
@@ -92,8 +92,8 @@ def visualize_result(result_path, output, pair="negative", placement="aligned", 
             raise ValueError("Select the comparisons.json report from a singlePRtest run")
         if pair not in ("positive", "negative"):
             raise ValueError("Pair must be positive or negative")
-        source = load_model(result_path.parent / data["caches"]["source"])
-        target = load_model(result_path.parent / data["caches"][pair])
+        source = load_model(resolve_stored_path(result_path.parent, data["caches"]["source"]))
+        target = load_model(resolve_stored_path(result_path.parent, data["caches"][pair]))
         comparison = data[pair + "_comparison"]
         if "alignment_transform" not in comparison:
             comparison = compare(source, target, comparison.get("histogram_threshold", .5))

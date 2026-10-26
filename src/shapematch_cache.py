@@ -3,7 +3,7 @@ import hashlib
 import json
 import math
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import tempfile
 
 FORMAT = "shapematch.features"
@@ -16,6 +16,33 @@ SCALAR_LISTS = ("featureMaxCurveDisps", "featureMinCurveDisps", "featureSphereDi
 
 class CacheError(ValueError):
     pass
+
+
+def stored_path(path, directory):
+    """Use portable relative paths, or absolute paths for different Windows drives.
+
+    A cross-drive reference works locally but cannot travel with a moved bundle.
+    Forward slashes are accepted by pathlib on all supported platforms.
+    """
+    path = Path(path).resolve()
+    try:
+        return Path(os.path.relpath(path, Path(directory).resolve())).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def resolve_stored_path(directory, value):
+    """Read portable paths and historical Windows relative paths on Unix."""
+    path = Path(value)
+    windows = PureWindowsPath(value)
+    if os.name != "nt" and windows.drive:
+        raise CacheError("Windows absolute path cannot be resolved on this platform; "
+                         "regenerate with STEP sources and caches on the same drive")
+    candidate = Path(directory) / path
+    # Prefer a real native filename, since backslashes are legal on Unix.
+    if os.name != "nt" and "\\" in str(value) and not candidate.exists():
+        candidate = Path(directory) / windows.as_posix()
+    return candidate.resolve()
 
 
 def source_hash(path):
@@ -81,7 +108,7 @@ def save_model(model, path):
     features["centroid"] = model.centroid
     data = {
         "format": FORMAT, "version": VERSION,
-        "source": {"path": os.path.relpath(source, path.parent), "sha256": source_hash(source)},
+        "source": {"path": stored_path(source, path.parent), "sha256": source_hash(source)},
         "transform": {"translation": model.insertionPoint, "scale": model.scale,
                       "rotation_degrees": model.rotation, "rotation_axis": model.rotationAxis},
         "features": features, "generation_time": model.generationTime,
@@ -99,7 +126,7 @@ def load_model(path, load_geometry=True):
         data = json.loads(path.read_text(encoding="utf-8"))
         if data["format"] != FORMAT or data["version"] != VERSION:
             raise CacheError("Unsupported feature cache format/version; regenerate from STEP")
-        source = (path.parent / data["source"]["path"]).resolve()
+        source = resolve_stored_path(path.parent, data["source"]["path"])
         if not source.is_file():
             raise CacheError(f"Cache STEP source is missing: {source}")
         if source_hash(source) != data["source"]["sha256"]:

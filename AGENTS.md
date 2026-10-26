@@ -15,16 +15,16 @@ ShapeMatch compares STEP CAD geometry through feature points and SVD alignment.
 
 ## Build, Test, and Development Commands
 
-Use Linux x86-64 and Python 3.11 or 3.12 in a virtual environment. FreeCAD and a display server are not runtime requirements.
+Use Python 3.11 or 3.12 in a virtual environment on Linux x86-64, Windows x86-64, or macOS (Intel/Apple Silicon). FreeCAD and a display server are not runtime requirements.
 
 ```bash
-python -m pip install -e '.[test]'
+python -m pip install -e ".[test]"
 python -m pytest -q
 python -m pytest -m integration
 python -m pip install build
 python -m build
-shapematch singlePRtest -I data/primitives -O /tmp/shapematch/features --seed 0
-shapematch multiPRtest -I /tmp/shapematch/features -O /tmp/shapematch/results --seed 0
+shapematch singlePRtest -I data/primitives -O shapematch-output/features --seed 0
+shapematch multiPRtest -I shapematch-output/features -O shapematch-output/results --seed 0
 ```
 
 These commands install development dependencies, run checks, build distributions, and exercise feature generation and batch matching. `python -m shapematch` is equivalent to the console command.

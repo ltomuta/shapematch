@@ -93,12 +93,12 @@ def test_html_is_offline_and_filenames_remain_inert(overlay, tmp_path):
     source, target, comparison = overlay
     source.name = '</script><script>window.CAD_FILENAME_EXECUTED=true</script>"&.stp'
     output = write_html(source, target, comparison, tmp_path / "nested/view.html")
-    document = Document(output.read_text())
+    document = Document(output.read_text(encoding="utf-8"))
     assert all("src" not in script for script in document.scripts)
     assert len(document.scripts) == 3
     assert json.loads(document.payload)["source"]["name"] == source.name
-    assert source.name not in output.read_text()
-    assert "Plotly.newPlot" in output.read_text()
+    assert source.name not in output.read_text(encoding="utf-8")
+    assert "Plotly.newPlot" in output.read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("change", ["scale", "reflection", "translation", "frame"])
@@ -145,10 +145,10 @@ def test_saved_results_reuse_fit_or_refit_old_reports(overlay, tmp_path, monkeyp
                                   "negative_comparison": saved}))
     output = visualize_result(report, tmp_path / "result.html")
     assert len(calls) == int(old_report)
-    assert json.loads(Document(output.read_text()).payload)["metrics"]["alignment_error"] == 0
+    assert json.loads(Document(output.read_text(encoding="utf-8")).payload)["metrics"]["alignment_error"] == 0
     # Exercise the real parser/command as well as the Python API.
     assert main(["visualize", str(report), "-o", str(tmp_path / "cli.html"), "--placement", "original"]) == 0
-    assert json.loads(Document((tmp_path / "cli.html").read_text()).payload)["placement"] == "original"
+    assert json.loads(Document((tmp_path / "cli.html").read_text(encoding="utf-8")).payload)["placement"] == "original"
 
 
 def test_visualize_rejects_wrong_report_and_output(overlay, tmp_path, capsys):

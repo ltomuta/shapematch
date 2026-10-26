@@ -11,7 +11,7 @@ import uuid
 
 import numpy as np
 
-from shapematch_cache import CacheError, FORMAT, load_model, save_model, write_json
+from shapematch_cache import CacheError, FORMAT, load_model, save_model, stored_path, write_json
 
 
 def _extract(path):
@@ -121,7 +121,7 @@ def _cache_files(directory, excluded):
 def multi_test(directory, csv_path, json_path):
     paths = _cache_files(directory, {Path(csv_path).resolve(), Path(json_path).resolve()})
     # Relative paths disambiguate equal filenames in nested input directories.
-    models = {str(p.relative_to(directory)): load_model(p) for p in paths}
+    models = {p.relative_to(directory).as_posix(): load_model(p) for p in paths}
     rows = []
     matrix = {}
     for source_name, source in models.items():
@@ -227,6 +227,10 @@ def main(argv=None):
                 for role in ("positive", "negative"):
                     row = {"source": result["source"], "target": result[role], **result[role + "_comparison"]}
                     writer.writerow({key: row[key] for key in fields})
+            # Resolve caches from the report location, including custom nested
+            # CSV paths, so a report/cache/STEP bundle can move between OSes.
+            result["caches"] = {role: stored_path(path, csv_path.parent)
+                                for role, path in result["caches"].items()}
             write_json(csv_path.with_suffix(".json"), {"format": "shapematch.single-result", "version": 1, **result})
             if html_path is not None:
                 print(f"HTML comparison written to {html_path}")

@@ -1,5 +1,7 @@
 import json
 import os
+from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -112,3 +114,40 @@ def test_comparisons_do_not_mutate_cached_features(cached_model):
     result = compare(cached_model, cached_model, .9)
     assert result["alignment_found"] and result["alignment_error"] == pytest.approx(0, abs=1e-10)
     assert cached_model.centroid == before
+
+
+@pytest.mark.parametrize("separator", ["/", "\\"])
+def test_nested_report_and_caches_survive_relocation(cached_model, tmp_path, monkeypatch, separator):
+    import shapematch_html as html
+    from shapematch_cache import save_model, write_json
+
+    bundle = tmp_path / "CAD bundle"
+    inputs = bundle / "input"
+    inputs.mkdir(parents=True)
+    caches = []
+    for role in ("source", "negative"):
+        source = inputs / f"{role}.stp"
+        shutil.copyfile(cached_model.filepath, source)
+        cached_model.filepath = str(source)
+        caches.append(save_model(cached_model, inputs / f"{role}.json"))
+    output = bundle / "output"
+    assert main(["singlePRtest", "-sf", str(caches[0]), "-nf", str(caches[1]),
+                 "-pf", str(caches[0]), "-O", str(output), "-of", "reports/comparisons.csv"]) == 0
+    report = output / "reports" / "comparisons.json"
+    data = json.loads(report.read_text(encoding="utf-8"))
+    assert all(value.startswith("../source_") or value.startswith("../negative_")
+               for value in data["caches"].values())
+    assert all("\\" not in value for value in data["caches"].values())
+    data["caches"] = {key: value.replace("/", separator) for key, value in data["caches"].items()}
+    write_json(report, data)
+    moved = tmp_path / "moved"
+    shutil.move(bundle, moved)
+    loaded = []
+
+    def capture(source, target, comparison, output, *args):
+        loaded.extend([source, target])
+        return output
+
+    monkeypatch.setattr(html, "write_html", capture)
+    html.visualize_result(moved / "output/reports/comparisons.json", moved / "view.html")
+    assert [Path(model.filepath) for model in loaded] == [moved / "input/source.stp", moved / "input/negative.stp"]

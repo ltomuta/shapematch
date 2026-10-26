@@ -14,7 +14,11 @@ caches never serialize CAD handles. Loading a cache verifies its STEP source's
 SHA-256 hash and reconstructs the stored scale/rotation/translation. Cache version
 1 uses `format: "shapematch.features"`; changing the schema requires a new version.
 Results use distinct format identifiers, so batch discovery ignores them.
-Relative source paths allow a cache/source directory tree to be relocated together.
+Source paths are stored with forward slashes; historical Windows relative paths
+are accepted on Unix too. New single-run reports reference caches relative to
+the report, so report/cache/STEP trees can move between operating systems.
+Cross-drive references on Windows fall back to absolute paths and remain local;
+keep the bundle on one drive for portability. The cache schema remains version 1.
 
 The wheel contains seven Python modules and project metadata. Benchmark data,
 reference tooling, and the original viewer are repository/source-distribution
@@ -63,8 +67,11 @@ python -m build
 Tests cover analytic geometry, all 15 captured FreeCAD intersection cases,
 cache portability/invalidation, deterministic CLI execution, legacy rejection,
 and seeded geometric self-alignment and shape differences. The CLI integration test blocks
-FreeCAD and graphics imports explicitly and unsets display variables. CI runs
-on Linux with Python 3.11 and 3.12.
+FreeCAD and graphics imports explicitly and unsets display variables. CI is
+configured for Linux x86-64, Windows x86-64, macOS Intel, and macOS
+Apple Silicon with Python 3.11 and 3.12. Each job runs the full suite (including
+integration cases), builds distributions, reinstalls the wheel, and checks both
+CLI entry points. Native Windows/macOS validation is pending the first CI run.
 
 `tools/reference.py` runs each fixture/seed in a subprocess with a timeout,
 captures geometry before extracting features, and records partial progress and
@@ -112,6 +119,6 @@ with local refinement, so a global optimum is not guaranteed for arbitrary
 parts. Sampling covers every face but does not certify every local deviation.
 A finite alignment error is not a calibrated match decision or manufacturing
 tolerance check. Identical feature counts and exact reproduction of historical
-numeric scores are not release guarantees. Windows/macOS, replacement desktop visualization, and
+numeric scores are not release guarantees. Replacement desktop visualization and
 legacy-cache conversion remain deferred. Offline [HTML overlays](html.md) are available
 through the optional `html` extra.

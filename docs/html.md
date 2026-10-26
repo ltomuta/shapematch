@@ -3,14 +3,13 @@
 Install the optional exporter in the active environment:
 
 ```bash
-python -m pip install '.[html]'
+python -m pip install ".[html]"
 ```
 
 Export an existing single-comparison report:
 
 ```bash
-python src/shapematch.py visualize /tmp/comparison/comparisons.json \
-  -o /tmp/comparison/comparison.html
+python -m shapematch visualize shapematch-output/features/comparisons.json -o shapematch-output/comparison.html
 ```
 
 The default pair is the source and the file passed as `-nf`. Use `--pair positive`
@@ -83,8 +82,7 @@ The default is **0**, retaining the numerical baseline of at least 1e-7 mm.
 The offline file includes 0, 0.001, 0.01, and 0.1 mm, plus any custom export value:
 
 ```bash
-shapematch visualize /tmp/comparison/comparisons.json \
-  -o /tmp/comparison/comparison.html --placement original --boolean-tolerance 0.01
+shapematch visualize shapematch-output/features/comparisons.json -o shapematch-output/comparison.html --placement original --boolean-tolerance 0.01
 ```
 
 The same flag is accepted by `singlePRtest --html`. Values must be finite and
