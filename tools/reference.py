@@ -106,7 +106,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--backend", choices=["freecad", "ocp"], required=True)
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--timeout", type=int, default=120)
+    parser.add_argument("--timeout", type=int, default=300,
+                        help="Per-case subprocess timeout in seconds (default: 300)")
     parser.add_argument("--worker", nargs=2)
     args = parser.parse_args()
     if args.worker:

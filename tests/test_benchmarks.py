@@ -8,6 +8,10 @@ import pytest
 
 from conftest import ROOT
 
+# Shared Intel macOS runners can take more than two minutes for seeded torus
+# extraction. This is a hang guard, not a performance or accuracy assertion.
+BENCHMARK_TIMEOUT = 300
+
 RECORDS = json.loads((Path(__file__).parent / "reference/ocp.json").read_text())["records"]
 
 
@@ -16,7 +20,7 @@ RECORDS = json.loads((Path(__file__).parent / "reference/ocp.json").read_text())
 def test_seeded_matching_geometry(reference):
     run = subprocess.run(
         [sys.executable, str(ROOT / "tools/reference.py"), "--backend", "ocp", "--worker",
-         reference["fixture"], str(reference["seed"])], capture_output=True, text=True, timeout=120)
+         reference["fixture"], str(reference["seed"])], capture_output=True, text=True, timeout=BENCHMARK_TIMEOUT)
     assert run.returncode == 0, run.stderr
     actual = json.loads(run.stdout.splitlines()[-1])
     assert actual["status"] == "ok", actual.get("error")
