@@ -3871,7 +3871,7 @@ def leftHandSpiralOrder2(
 
 
 def SVDerror(source, target, sourceCP, scaledTargetCP, targetCP, STscale,
-             numberOfPoints, scene=None):
+             numberOfPoints, scene=None, estimate_scale=True):
     """Fit a proper similarity and score both CAD boundaries in target units.
 
     scaledTargetCP is the legacy target-to-source-size representation. Undo
@@ -3880,7 +3880,7 @@ def SVDerror(source, target, sourceCP, scaledTargetCP, targetCP, STscale,
     from shapematch_alignment import fit_points, surface_errors
     actual_target = (np.asarray(scaledTargetCP) - target.centroid) * STscale + target.centroid
     try:
-        rotation, translation, scale = fit_points(sourceCP, actual_target)
+        rotation, translation, scale = fit_points(sourceCP, actual_target, estimate_scale=estimate_scale)
     except ValueError:
         return [], None, None, None
     errors = surface_errors(source.objectHandle, target.objectHandle, rotation, translation, scale,
@@ -3893,7 +3893,7 @@ def SVDerror(source, target, sourceCP, scaledTargetCP, targetCP, STscale,
     return weighted.tolist(), rotation, translation.tolist(), scale
 
 
-def predictionTest5(source, target, numberOfPoints=20, DistThreshold=1e-2, scene=None):
+def predictionTest5(source, target, numberOfPoints=20, DistThreshold=1e-2, scene=None, estimate_scale=True):
     """Register without placement metadata and measure both exact CAD boundaries.
 
     Returns (symmetric RMSE in target units, rotation, translation, scale), with
@@ -3917,11 +3917,11 @@ def predictionTest5(source, target, numberOfPoints=20, DistThreshold=1e-2, scene
                 for order in orders[1:]:
                     try:
                         candidates.append(fit_points([source_points[i] for i in orders[0]],
-                                                     [target_points[i] for i in order]))
+                                                     [target_points[i] for i in order], estimate_scale=estimate_scale))
                     except ValueError:
                         continue
     error, (rotation, translation, scale), errors = register(
-        source.objectHandle, target.objectHandle, candidates, max(96, numberOfPoints * 4))
+        source.objectHandle, target.objectHandle, candidates, max(96, numberOfPoints * 4), estimate_scale=estimate_scale)
     source.alignmentDiagnostics = {
         "forward_rmse": RMSError(errors[0]), "reverse_rmse": RMSError(errors[1]),
         "source_samples": len(errors[0]), "target_samples": len(errors[1]),
@@ -3947,6 +3947,7 @@ def getModelFeatures2(
     rotationDegrees,
     rotationAxis,
     scene=None,
+    timings=None,
 ):
     """
     Import a CAD STEP model file from given file path into CAD model space, also viewing scene space
@@ -3977,10 +3978,15 @@ def getModelFeatures2(
 
     # Model = Shape(modelFilePath, insertionPoint, scaleFactor, rotationDegrees, rotationAxis)
 
+    load_started = time.perf_counter()
     STEPtestModel = STEPmodel()
     STEPtestModel.importSTEPmodel(
         modelFilePath, insertionPoint, scaleFactor, rotationDegrees, rotationAxis
     )
+
+    loaded = time.perf_counter()
+    if timings is not None:
+        timings["step_loading"] = loaded - load_started
 
     # insert into CAD model space
     # Model.placeModel()
@@ -4044,6 +4050,8 @@ def getModelFeatures2(
     else:
         print("no centroid")
         return None
+    if timings is not None:
+        timings["feature_extraction"] = time.perf_counter() - loaded
     # get extrema features from 'S' model
     return STEPtestModel
 

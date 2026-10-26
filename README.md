@@ -284,3 +284,7 @@ To contribute to **shapematch** create a fork on GitHub. Clone your fork, make s
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
 
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+
+## Local STEP library app
+
+Install `python -m pip install "shapematch[app]"` and run `shapematch app` for a local browser interface with recursive indexing, incremental rescans, similarity searches and interactive 3D overlays. See [local app usage and validation](docs/local-app.md).

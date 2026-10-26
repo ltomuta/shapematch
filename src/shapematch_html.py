@@ -29,23 +29,27 @@ def _unplace(vertices, model):
     return (np.asarray(vertices) - model.insertionPoint) @ rotation / model.scale
 
 
-def comparison_payload(source, target, comparison, placement="aligned", boolean_tolerance=0.):
-    """Display in target native STEP coordinates/mm, never benchmark-sized units."""
+def comparison_payload(source, target, comparison, placement="aligned", boolean_tolerance=0., include_booleans=True):
+    """Display in target native STEP coordinates/mm.
+
+    App previews can omit Boolean CAD work; offline export keeps it by default.
+    """
     if placement not in ("aligned", "original"):
         raise ValueError("Placement must be aligned or original")
     rotation, translation, scale = _pose(comparison)
     source_vertices, source_triangles = source.objectHandle.triangle_mesh()
     target_vertices, target_triangles = target.objectHandle.triangle_mesh()
     recovered = _unplace(transform(source_vertices, rotation, translation, scale), target)
-    from shapematch_boolean import comparison_partitions, validate_tolerance
-    boolean_tolerance = validate_tolerance(boolean_tolerance)
-    partitions = comparison_partitions(source, target, rotation, translation, scale, tolerance=boolean_tolerance)
-    # Offline HTML cannot execute the CAD kernel. Include a few explicit levels,
-    # plus any custom requested value, for genuine geometric tolerance changes.
-    variants = []
-    for tolerance in sorted({0., .001, .01, .1} - {boolean_tolerance}):
-        variants.append({"tolerance": tolerance, "placements": comparison_partitions(
-            source, target, rotation, translation, scale, tolerance=tolerance)})
+    partitions, variants = None, []
+    if include_booleans:
+        from shapematch_boolean import comparison_partitions, validate_tolerance
+        boolean_tolerance = validate_tolerance(boolean_tolerance)
+        partitions = comparison_partitions(source, target, rotation, translation, scale, tolerance=boolean_tolerance)
+        # Offline HTML cannot execute the CAD kernel. Include a few explicit levels,
+        # plus any custom requested value, for genuine geometric tolerance changes.
+        for tolerance in sorted({0., .001, .01, .1} - {boolean_tolerance}):
+            variants.append({"tolerance": tolerance, "placements": comparison_partitions(
+                source, target, rotation, translation, scale, tolerance=tolerance)})
     return {
         "format": "shapematch.html-comparison", "version": 3, "placement": placement,
         "units": "mm",

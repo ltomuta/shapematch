@@ -48,7 +48,7 @@ def _clone(model):
     return result
 
 
-def compare(source, target, threshold):
+def compare(source, target, threshold, estimate_scale=True):
     """Keep pair comparisons independent of centroid corrections in predictionTest5."""
     import shapematch as sm
     source, target = _clone(source), _clone(target)
@@ -57,7 +57,7 @@ def compare(source, target, threshold):
         raise ValueError("Feature histogram comparison produced a nonfinite score")
     # Feature extraction can miss holes or yield too few points. A descriptor is
     # a hint, not grounds for skipping the independent surface registration.
-    error, rotation, translation, scale = sm.predictionTest5(source, target, numberOfPoints=20, DistThreshold=1e-2)
+    error, rotation, translation, scale = sm.predictionTest5(source, target, numberOfPoints=20, DistThreshold=1e-2, estimate_scale=estimate_scale)
     error = float(error)
     diagnostics = source.alignmentDiagnostics
     # The fit/error live in the placed target frame. Undo only the benchmark's
@@ -177,7 +177,16 @@ def main(argv=None):
     visual.add_argument("--placement", choices=["aligned", "original"], default="aligned")
     visual.add_argument("--boolean-tolerance", type=float, default=0., metavar="MM",
                         help="Initial Boolean positional tolerance in mm (default: 0, numerical baseline)")
+    app = commands.add_parser("app", help="Open the local STEP library in a browser")
+    app.add_argument("--port", type=int, default=0)
+    app.add_argument("--workers", type=int, default=2)
+    app.add_argument("--timeout", type=float, default=300.)
+    app.add_argument("--no-browser", action="store_true")
+    app.add_argument("--data-dir", type=Path, help="Override the local application-data directory")
     args = parser.parse_args(argv)
+    if args.command == "app":
+        from shapematch_app.server import launch
+        return launch(args.port, args.workers, args.timeout, not args.no_browser, args.data_dir)
     if hasattr(args, "boolean_tolerance"):
         from shapematch_boolean import validate_tolerance
         try:

@@ -51,7 +51,7 @@ def _subset(points, count):
     return points[np.linspace(0, len(points) - 1, min(count, len(points)), dtype=int)]
 
 
-def _refine(source, target, initial, a, b):
+def _refine(source, target, initial, a, b, estimate_scale=True):
     """Trimmed closest-surface refinement; only fitting trims, reporting does not."""
     rotation, translation, scale = initial
     initial_scale = scale
@@ -66,7 +66,7 @@ def _refine(source, target, initial, a, b):
         paired_a = np.concatenate((a, closest_a))[keep]
         paired_b = np.concatenate((closest_b, b))[keep]
         try:
-            candidate = fit_points(paired_a, paired_b)
+            candidate = fit_points(paired_a, paired_b, estimate_scale=estimate_scale)
         except ValueError:
             break
         if not .5 <= candidate[2] / initial_scale <= 2:
@@ -79,18 +79,20 @@ def _refine(source, target, initial, a, b):
     return rotation, translation, scale
 
 
-def register(source, target, candidates=(), sample_count=96):
+def register(source, target, candidates=(), sample_count=96, estimate_scale=True):
     """Evaluate feature and principal-frame candidates, then refine the best fits.
 
     Principal frames supply missing degrees of freedom when extraction returns
     only two points. All 24 proper signed axis permutations handle axis/sign
-    ambiguity without allowing mirror transforms.
+    ambiguity without allowing mirror transforms. With estimate_scale=False,
+    every hypothesis and refinement is rigid, including caller-supplied fits.
     """
     a, b = source.surface_samples(sample_count), target.surface_samples(sample_count)
     volume_a, ca, axes_a = source.principal_frame()
     volume_b, cb, axes_b = target.principal_frame()
-    scale = (volume_b / volume_a) ** (1 / 3)
-    hypotheses = list(candidates)
+    scale = (volume_b / volume_a) ** (1 / 3) if estimate_scale else 1.0
+    hypotheses = list(candidates) if estimate_scale else [
+        (r, cb - r @ ca, 1.0) for r, t, s in candidates]
     frames = [(axes_a, axes_b)]
     planar_a, planar_b = source.planar_frame(), target.planar_frame()
     if planar_a is not None and planar_b is not None:
@@ -114,7 +116,7 @@ def register(source, target, candidates=(), sample_count=96):
     for coarse_error, _, candidate in ranked[:3]:
         alternatives = [candidate]
         if coarse_error > target.tolerance:
-            alternatives.append(_refine(source, target, candidate, _subset(a, 64), _subset(b, 64)))
+            alternatives.append(_refine(source, target, candidate, _subset(a, 64), _subset(b, 64), estimate_scale=estimate_scale))
         # Trimming can improve the dominant surface while worsening total RMS.
         # Keep the original fit available when selecting the reported result.
         for fit in alternatives:
