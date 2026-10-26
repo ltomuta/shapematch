@@ -1,0 +1,3 @@
+# Preserve the research source's existing CRLF endings without whitespace noise.
+src/shapematch.py whitespace=cr-at-eol
+legacy/*.py whitespace=cr-at-eol

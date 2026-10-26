@@ -87,99 +87,125 @@ Further details available at,
 
 ## Installation
 
-This version uses the open-source [FreeCAD](https://wiki.freecad.org/Download) 3D computer aided design geometry engine, alongside the 3D graphics libraries used with the software (PySide2, pivy, coin). 
-Under Microsoft Windows, the FreeCAD directory is presumed to be,
-
-    C:\Program Files\FreeCAD*\
-
-Under Debian, Ubuntu Linux, 
-
-    /usr/lib/freecad
-
-**shapeMatch** has been tested with Ubuntu 20.04.5 LTS & FreeCAD 0.20.2, the most trouble-free installation is via Debian Advanced Package Tool, which also allows installation of a compatible pivy library. To install from a bash shell, 
+The standalone headless release runs on Linux x86-64 with Python 3.11 or 3.12.
+It uses Open CASCADE through `cadquery-ocp==8.0.1.1.0`; FreeCAD, Qt, Pivy,
+and a display server are not required. OCP installs native binary wheels and
+brings substantial dependencies, including VTK. Use a Linux distribution
+compatible with its manylinux_2_28 wheels (glibc 2.28 or newer).
 
 ```bash
-$ sudo apt-get update
-$ sudo apt-get install freecad
-$ sudo apt-get install python3-pivy
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install .
 ```
 
-See [official FreeCAD docs](https://wiki.freecad.org/Installing_on_Linux)
-
-[See also Pivy 0.6.5 requirement](https://pkgs.org/download/python3-pivy)
-
-The AppImage squashfs package also tested, but requires that the package is unpacked and pathnames set. 
-Ubuntu snaps FreeCAD 0.20.2 installation does not load local Python site-packages or FreeCAD python objects.
-The directory location of FreeCAD python interfaces and local site-packages is added to the python PATH environment variable. 
-Libraries required for Open Inventor visual display are installed within the FreeCAD installation, use PySide2 rather than PyQt5 with FreeCAD 0.20.
-
-
-Clone the project to a local directory to repeat tests using the NIST/Drexel CAD STEP data
-
-```bash
-$ git clone https://github.com/TobyBorland/shapematch.git
-```
-
-### Library installation
-
-The universal Python PyPI package index only lists an outdated version of the python coin3D binding, **pivy 0.3.0**. 
-FreeCAD and the FreeCAD Graphic User Interface is sensitive to library versions used in compilation, PySide2, PyQt, Pivy.
-While a virtual environment would be the ideal approach, Pipenv is unsuited to a distribution mixing Python and version-sensitive C++ libraries.  
-Anaconda/conda provides a suitable distribution environment but does not host stable distributions at the time of writing. 
-
-
-The Python environment path is updated in Windows to reflect the default path of the FreeCAD binary files and associated graphics libraries.
-```python
-FreeCADPATH = r"C:\Program Files\FreeCAD*\bin"
-```
-
-Under Ubuntu, the default system-wide installation functions correctly (tested Ubuntu 20.04.5 LTS with FreeCAD 0.20.2, Python 3.8)
-
-```python
-FreeCADPATH = r"/usr/lib/freecad/bin"
-PythonPackagePATH = r"/usr/lib/freecad-python3/lib"
-```
-
-The [AppImage](https://github.com/FreeCAD/FreeCAD-Bundle/releases/tag/0.20.2) version tested also works when installed with the AppImageLauncher package and the squashfs filesystem is extracted.  
-(FreeCAD_0.20.2-2022-12-27-conda-Linux-x86_64-py310_529d628153ed2b233333ba5cef519383.AppImage)
-
-```python
-FreeCADPATH = r"/home/LOCAL_USER/Applications/FreeCAD_SQUASHFS_ROOT/usr/bin"
-PythonPackagePATH = r"/home/LOCAL_USER/Applications/FreeCAD_SQUASHFS_ROOT/usr/lib/python3.1/site-packages"
-```
+For development, install `python -m pip install -e '.[test]'` and run
+`python -m pytest`. Windows, macOS, and other Python versions are not yet
+validated for this release. Benchmark STEP files stay in the repository;
+they are not bundled into the installed wheel.
 
 ## Usage
 
-The shapeMatch package can be run from a terminal command line, two functions are available,
+Run these commands from the repository checkout after installation:
 
 ```bash
-$ python -m shapematch singlePRtest -I /path/to/shape/STEP/files
+shapematch --help
+shapematch singlePRtest -I data/primitives -O /tmp/shapematch/features --seed 0
+shapematch multiPRtest -I /tmp/shapematch/features -O /tmp/shapematch/results --seed 0
 ```
 
-**singletest** selects three STEP CAD files, all rotated, scaled and positioned at random. The designated negative model is a different shape than the source and positive model. 
+`python -m shapematch` accepts the same arguments. Without installation, use
+`PYTHONPATH=src python -m shapematch ...`. `multitest` is an alias for
+`multiPRtest`. The default seed is `0`; input discovery is sorted, and random
+model selection tries at most 20 candidates before reporting failure.
 
-Each of these three CAD models are converted to feature point representations, so that a similarity comparison of the source model against the positive and negative models can be tested. The feature point object files are saved, as are the comparison metrics. The FreeCAD geometry engine is invoked through an external python interface rather than the script running within the internal FreeCAD python scripting interpreter.
-
-The command line has options to provide the path to the output directory where the generated feature point representations are saved (**-O**), the input directory containing the STEP models (**-I**), alternatively, the paths to specified source, negative and positive STEP files may be individually specified (**-sf**, **-nf**, **-pf**). Comparison metrics are saved as a comma-seperated value file, if a file already exists it is updated. The CSV file name may be optionally specified (**-of**). 
-
-The topographic schema uses simple feature points such as the centre of radially symmetric features and the local extrema relative to the shape centroid. The process of locating these points can be followed (and debugged) from a 3D CAD representation saved as an Open Inventor scenegraph file. This file is created with the **-s2** flag. A scenegraph file of the source, positive and negative files under comparison may be saved wth the **-s** flag.
-
-Each operation of the **singletest** creates three feature point representation objects corresponding to the source, positive and negative STEP files used. Once a number of these object feature point representations have been created and saved as files, they may be used to demonstrate the speed and accuracy of similarity matching using this representation.
-
+`singlePRtest` extracts three feature representations: a source, a randomly
+transformed positive model of the same STEP geometry, and a negative model
+from a different STEP source. `-I` searches STEP files recursively. For an
+explicit comparison, supply STEP files or new JSON caches:
 
 ```bash
-$ python -m shapematch multitest -I /path/to/shape/object/files
+shapematch singlePRtest \
+  -sf data/primitives/miscellanea/tetrahedron.scaled.stp \
+  -nf data/primitives/cube/unit_cube.stp \
+  -O /tmp/shapematch/features --seed 0
 ```
 
-**multitest** performs a similarity comparison over all feature point representation models within a specified input directory (**-I**). This process generates a CSV output file which may be explicitly named (**-of**), and a python object file containing similar data, which may be saved with a custom filename following the **-obf** flag. Both command functions have a verbose flag (**-v**) which displays detailed operational information.
+Use `-pf` to provide the positive model explicitly. Cache inputs preserve their
+stored transforms; STEP inputs receive seeded random transforms. `-v` enables
+research diagnostics. Output directories are created automatically.
 
-### Visualisation
+Each single run writes three `*.features.json` caches, `comparisons.csv`, and
+`comparisons.json`. `-of filename.csv` changes the CSV and companion JSON name.
+`multiPRtest` compares all JSON feature caches under `-I`, writing a CSV error
+matrix and `rankings.json`; `--json_file` (or the historical `-obf`) changes the
+ranked JSON filename. Result documents in input folders are ignored.
 
-A stand-alone program **iv_viewer.py** is provided to allow viewing of created scenegraph files without recourse to the FreeCAD program, (IV scenegraphs of model surfaces are not displaying within FreeCAD for indetermined reasons)
+Results report histogram similarity and **bidirectional closest-surface RMS
+error in millimeters**. `forward_error` and `reverse_error` report the two
+directions separately; both include hole walls and interior surfaces.
+`normalized_alignment_error` divides the placed-frame error by the target's
+bounding-box diagonal in the same frame. Random benchmark scaling is undone
+when reporting millimeters.
+
+Histogram thresholds (`0.5` single, `0.9` batch) now provide the informational
+`histogram_passed` field. They do not prevent geometric alignment: sparse or
+unstable feature signatures can miss genuinely similar parts. Registration
+tests proper rotations and positive uniform scales, with geometry-based
+candidates and closest-surface refinement when features are insufficient.
+`alignment_found` means a finite fit was computed, not that the parts are
+identical. The distances are sampled estimates, not maximum deviation bounds
+or manufacturing pass/fail decisions. See [alignment details](docs/alignment.md).
+
+### Cache migration and visualization
+
+Old dill `.obj` files are not supported. Regenerate them by running
+`singlePRtest` against the original STEP files. New caches contain only
+versioned JSON feature data, transforms, a relative STEP path, and a SHA-256
+source hash. Geometry is rebuilt from the STEP source when loading a cache.
+Move caches and STEP files together while preserving relative paths; missing
+or changed sources require regeneration.
+
+Interactive HTML overlays are available with the optional plotting dependency:
 
 ```bash
-$ python -m iv_viewer -I /path/to/scenegraph/file
+python -m pip install '.[html]'
+shapematch visualize /tmp/comparison/comparisons.json -o /tmp/comparison/comparison.html
 ```
+
+Open the HTML file in a WebGL-capable browser. Both meshes and the viewer are
+embedded; no server or internet connection is needed. Orbit, zoom, hide either
+part, adjust transparency, and switch between recovered alignment and original
+STEP placement. The original-placement view applies no recovered scaling.
+RMS measurements describe recovered alignment and are hidden in the original view.
+
+Select **Display → Boolean regions** to color and toggle the common volume,
+material only in A, and material only in B. A is the source; B is the compared
+part. The viewer includes CAD volumes in mm³, a **Differences only** button,
+separate opacity controls, and three color schemes. Boolean regions are computed
+for both original placement and recovered alignment before export; no server is
+needed to switch between them.
+
+The Boolean view also has a positional tolerance selector in millimeters, with
+precomputed numerical-baseline, 0.001, 0.01, and 0.1 mm levels. Use
+`--boolean-tolerance 0.01` with `visualize` or `singlePRtest --html` to select a
+custom initial value (also included in the file). The default is the numerical
+baseline. This can suppress skins from near-coincident geometry; it does not
+change the fit or RMS score. Use original placement for already aligned parts.
+
+To export while running a new comparison, append `--html` to `singlePRtest`.
+It writes `comparison.html` under `-O`; `--html filename.html` changes the name.
+Use `--placement original` to start in the original STEP coordinates. By default,
+`visualize` shows your two input files; `--pair positive` shows the self-control.
+Old reports without a saved transform are refitted from their feature caches
+once. See [HTML export details](docs/html.md).
+
+Legacy scenegraph flags produce an explanatory error, and the
+`iv_viewer` entry point is no longer installed. Original FreeCAD-based source
+and viewer code are archived under `legacy/`; bundled `.iv` and `.obj` examples
+are preserved as historical artifacts. See [migration notes](docs/standalone.md)
+for intentional corrections and reference validation.
 
 ### CAD source data 
 

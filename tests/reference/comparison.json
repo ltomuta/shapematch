@@ -1,0 +1,124 @@
+{
+  "records": [
+    {
+      "fixture": "cube/unit_cube.stp",
+      "seed": 0,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "cube/unit_cube.stp",
+      "seed": 1,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "cube/unit_cube.stp",
+      "seed": 2,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "sphere/unit_sphere.stp",
+      "seed": 0,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "sphere/unit_sphere.stp",
+      "seed": 1,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "sphere/unit_sphere.stp",
+      "seed": 2,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "cylinder/unit_cyl.stp",
+      "seed": 0,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "cylinder/unit_cyl.stp",
+      "seed": 1,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "cylinder/unit_cyl.stp",
+      "seed": 2,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "torus/unit_torus.stp",
+      "seed": 0,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "torus/unit_torus.stp",
+      "seed": 1,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "torus/unit_torus.stp",
+      "seed": 2,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "miscellanea/tetrahedron.scaled.stp",
+      "seed": 0,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "miscellanea/tetrahedron.scaled.stp",
+      "seed": 1,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    },
+    {
+      "fixture": "miscellanea/tetrahedron.scaled.stp",
+      "seed": 2,
+      "geometry_equal": true,
+      "freecad_status": "timeout",
+      "ocp_status": "ok",
+      "matching_unavailable": "Exceeded 180 seconds"
+    }
+  ]
+}

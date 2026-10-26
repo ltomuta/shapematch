@@ -79,7 +79,6 @@ from datetime import datetime as dt
 from operator import itemgetter
 import csv  # consider pandas
 import time  # assess how long it takes to generate word similarity matrix
-import dill as pickle  # import pickle
 from random import randint, random, sample, choice, uniform
 from math import cos, sin, pi, sqrt
 import cv2  # python 3.8 => pip install opencv-python
@@ -92,416 +91,19 @@ from itertools import combinations
 from collections import namedtuple  # PyCharm bug will flag this as type error
 
 Point = namedtuple("Point", "x y z")
+from shapematch_geometry import Geometry, GeometryError
 
-if platform.system() == "Linux":  # tested Ubuntu 20.04.5 LTS w/ FreeCAD 0.20.2
-    # Ubuntu snaps FreeCAD 0.20.2 installation does not load local Python site-packages or FreeCAD python objects
-    FreeCADPATH = r"/usr/lib/freecad/bin"
-    if glob.glob(FreeCADPATH):
-        PythonPackagePATH = r"/usr/lib/freecad-python3/lib"
-        #PivyPackagePATH = r"/usr/lib/python3/dist-packages"
-        sys.path.insert(0, FreeCADPATH)
-        sys.path.insert(1, PythonPackagePATH)
-        #sys.path.insert(2, PivyPackagePATH)
-        # sys.path.append(FreeCADPATH)
-        # sys.path.append(PythonPackagePATH)
-        print(
-            "FreeCAD located in " + FreeCADPATH
-        )
-        #print(sys.path[:3])
-    else:
-        print(
-            "No instance of FreeCAD located in anticipated Linux /usr/lib/freecad directory"
-        )
-        print("Tested standard installation via '$ sudo apt-get install freecad'")
-        print("AppImage squashfs package also tested, unpack and set pathnames")
-        print(
-            "Ubuntu snaps FreeCAD 0.20.2 installation does not load local Python site-packages or FreeCAD python objects"
-        )
-        print("See https://wiki.freecad.org/Installing_on_Linux")
-        sys.exit(1)
-        # FreeCADPATH = os.path.expanduser('~') + os.sep + 'Applications/squashfs-root/usr/bin'
-        # PythonPackagePATH = r'~/Applications/squashfs-root/usr/lib/python3.1/site-packages'
-
-elif platform.system() == "Windows":
-    # import oschmod # Windows file permissions
-    # test an instance of FreeCAD exists within
-    FreeCADPATH = glob.glob(r"C:\Program Files\FreeCAD*\bin\FreeCAD.exe")
-    if len(FreeCADPATH) > 0:
-        FreeCADPATH = os.path.split(FreeCADPATH[0])[0]
-        # PythonPackagePATH = FreeCADPATH + r"\Lib\site-packages"
-        sys.path.append(FreeCADPATH)
-        os.add_dll_directory(FreeCADPATH)
-        # sys.path.append(PythonPackagePATH)
-        # os.add_dll_directory(PythonPackagePATH)
-        print(
-            "FreeCAD located in " + FreeCADPATH
-        )
-    else:
-        print(
-            r"No instance of FreeCAD located in customary MS Windows C:\Program Files\ "
-        )
-        sys.exit(1)
-else:
-    print(
-        "Note pathnames for FreeCAD installation under operating systems other than Microsoft Windows"
-    )
-    print(" will have to be manually specified")
-
-# The libraries required for Open Inventor visual display are installed within the FreeCAD installation
-# (pivy, PtSide2, PyQT5), # separate installations on the customary Python paths don't play nicely with FreeCAD.
-# use PySide2 rather than PyQt5 with FreeCAD 0.20
-# from PySide2 import QtCore, QtGui, QtWidgets
-
-# from PySide2.QtWidgets import QLabel, QFileDialog
-# use the Pivy from FreeCAD installation
-
-from pivy import coin # python3-pivy requires 0.6.5, not in PyPI, see Debian packages
-
-# from pivy.quarter import QuarterWidget
-import FreeCAD as F_app
-import FreeCADGui as F_GUI
-
-# from FreeCAD import Part
-import Part as Part_app
-
-# eps machine precision constant
 eps = np.finfo(float).eps
 phi = (1 + np.sqrt(5)) / 2
-isVerbose = True  # reporting level
-# create & view scene of source, positive & negative test models together.
-# single instance per run of singleShapePRtest()
-viewerFlag = True
-# create & save individual scenes that includes higher detail of model feature detection
-generativeSceneFlag = True
-
-DesernoSphereCache = dict()
-TammesSphereCache = dict()
-
-# longer execution times use a finishing bell
-if platform.system() == "Windows":
-    try:
-        import winsound
-
-    except ImportError(winsound):
-
-        def playsound(frequency, duration):
-            # apt-get install beep
-            os.system("beep -f %s -l %s" % (frequency, duration))
-
-    else:
-
-        def playsound(frequency, duration):
-            winsound.Beep(frequency, duration)
-
-elif platform.system() == "Linux":
-
-    def playsound(frequency, duration):
-        os.popen(
-            "speaker-test -t sine -f %s -l 1 & sleep %s && kill -9 $!"
-            % (frequency, duration)
-        )
-        # apt-get install beep
-        # os.system("beep -f %s -l %s" % (frequency, duration))
-        # beep now requires enabling under Ubuntu, "sudo modprobe pcspkr"
-        # or comment out ‘blacklist pcspkr‘ in /etc/modprobe.d/blacklist
-
-
-class ViewScene(object):
-    """
-    class for creating an open inventor *.iv scene viewable by pivy coin Quarter library or other viewer
-    FreeCAD 0.20 does not yet read imported shapes
-    """
-
-    def __init__(self, name=""):
-        self.name = name
-        self.pointCoordsList = []
-        self.shapeNameList = []
-        self.shapeNodeList = []
-        self.sceneRoot = coin.SoSeparator()
-
-        self.modelDoc = F_app.newDocument("uniqueDocHandle", label="modelDocLabel")
-        F_app.setActiveDocument("uniqueDocHandle")
-        self.modelDoc.recompute()
-
-        # point added to document root allows imported IV geometry to be read
-        pointObject = self.modelDoc.addObject("Part::Vertex", "originPoint")
-        rootNode = F_GUI.subgraphFromObject(self.modelDoc.Objects[0])
-        self.sceneRoot.addChild(rootNode)
-        self.shapeNodeList.append(rootNode)
-        self.shapeNameList.append("originPoint")
-
-        self.sceneCoords = coin.SoCoordinate3()
-        self.sceneMarkers = coin.SoMarkerSet()
-        self.sceneMarkers.markerIndex = coin.SoMarkerSet.DIAMOND_FILLED_5_5
-
-        self.colorRed = coin.SoBaseColor()
-        self.colorRed.rgb = (1.0, 0.0, 0.0)
-        self.colorLime = coin.SoBaseColor()
-        self.colorLime.rgb = (0.0, 1.0, 0.0)
-        self.colorGreen = coin.SoBaseColor()
-        self.colorGreen.rgb = (0.0, 0.5, 0.0)
-        self.colorBlue = coin.SoBaseColor()
-        self.colorBlue.rgb = (0.0, 0.0, 1.0)
-        self.colorYellow = coin.SoBaseColor()
-        self.colorYellow.rgb = (1.0, 1.0, 0.0)
-        self.colorPurple = coin.SoBaseColor()
-        self.colorPurple.rgb = (1.0, 0.0, 1.0)
-        self.colorCyan = coin.SoBaseColor()
-        self.colorCyan.rgb = (0.0, 1.0, 1.0)
-        self.colorWhite = coin.SoBaseColor()
-        self.colorWhite.rgb = (1.0, 1.0, 1.0)
-        self.colorBlack = coin.SoBaseColor()
-        self.colorBlack.rgb = (0.0, 0.0, 0.0)
-        self.colorGrey = coin.SoBaseColor()
-        self.colorGrey.rgb = (0.5, 0.5, 0.5)
-        self.colorMaroon = coin.SoBaseColor()
-        self.colorMaroon.rgb = (0.5, 0.0, 0.0)
-        self.colorNavy = coin.SoBaseColor()
-        self.colorNavy.rgb = (0.0, 0.0, 0.5)
-        self.colorOlive = coin.SoBaseColor()
-        self.colorOlive.rgb = (0.5, 0.5, 0.0)
-        self.colorSilver = coin.SoBaseColor()
-        self.colorSilver.rgb = (0.75, 0.75, 0.75)
-        self.colorTeal = coin.SoBaseColor()
-        self.colorTeal.rgb = (0.0, 0.5, 0.5)
-        self.colorOrange = coin.SoBaseColor()
-        self.colorOrange.rgb = (1.0, 0.5, 0.0)
-        self.colorLightBlue = coin.SoBaseColor()
-        self.colorLightBlue.rgb = (0.678, 0.847, 0.902)
-
-        self.colorMap = {
-            "red": self.colorRed,
-            "green": self.colorGreen,
-            "lime": self.colorLime,
-            "blue": self.colorBlue,
-            "yellow": self.colorYellow,
-            "purple": self.colorPurple,
-            "cyan": self.colorCyan,
-            "white": self.colorWhite,
-            "black": self.colorBlack,
-            "grey": self.colorGrey,
-            "maroon": self.colorMaroon,
-            "navy": self.colorNavy,
-            "olive": self.colorOlive,
-            "silver": self.colorSilver,
-            "teal": self.colorTeal,
-            "orange": self.colorOrange,
-            "lightblue": self.colorLightBlue,
-        }
-
-    def addShape(
-        self,
-        shapeObject,
-        shapeName,
-        ambColor="",
-        diffColor="",
-        specColor="",
-        emColor="",
-        transp=1.0,
-    ):
-        shapeViewObject = self.modelDoc.addObject("Part::FeaturePython", shapeName)
-        self.modelDoc.recompute()
-        shapeViewObject.Shape = shapeObject
-        modelDocObjectListLast = len(self.modelDoc.Objects) - 1
-        shapeNode = F_GUI.subgraphFromObject(
-            self.modelDoc.Objects[modelDocObjectListLast]
-        )
-
-        # need to navigate through the various display structures in IV representation to change viewing values
-        Render1material = shapeNode.getChild(2).getChild(1).getChild(2)  # points
-        Render2material = shapeNode.getChild(2).getChild(1).getChild(2)  # wireframe
-        Render3material = shapeNode.getChild(2).getChild(3).getChild(1)  # shaded?
-
-        if ambColor:
-            ac = self.colorMap[ambColor.lower()].rgb.values[0]
-            Render1material.ambientColor.setValue(ac[0], ac[1], ac[2])
-            Render2material.ambientColor.setValue(ac[0], ac[1], ac[2])
-
-        if diffColor:
-            dc = self.colorMap[diffColor.lower()].rgb.values[0]
-            Render1material.diffuseColor.setValue(dc[0], dc[1], dc[2])
-            Render2material.diffuseColor.setValue(dc[0], dc[1], dc[2])
-            Render3material.diffuseColor.setValue(dc[0], dc[1], dc[2])
-
-        if specColor:
-            sc = self.colorMap[specColor.lower()].rgb.values[0]
-            Render1material.specularColor.setValue(sc[0], sc[1], sc[2])
-            Render2material.specularColor.setValue(sc[0], sc[1], sc[2])
-
-        if emColor:
-            ec = self.colorMap[emColor.lower()].rgb.values[0]
-            Render1material.emissiveColor.setValue(ec[0], ec[1], ec[2])
-            Render2material.emissiveColor.setValue(ec[0], ec[1], ec[2])
-
-        Render1material.transparency.setValue(transp)  # FreeCADgui bug writing IV file?
-        Render2material.transparency.setValue(transp)
-        Render3material.transparency.setValue(transp)
-
-        shapeSep = coin.SoSeparator()
-        shapeSep.addChild(shapeNode)
-
-        self.sceneRoot.addChild(shapeSep)  # only 1 object expected
-        self.shapeNodeList.append(shapeNode)
-        self.shapeNameList.append(shapeName)
-
-    def addText(self, offset, text):
-        self.labelFont = coin.SoFont()
-        self.labelFont.name = "Ariel"
-        self.labelFont.size.setValue(10)
-
-        self.labelSep = coin.SoSeparator()
-        self.labelTransform = coin.SoTransform()
-        self.label = coin.SoText2()
-        self.labelTransform.translation = offset
-
-        if text.__class__.__name__ == "list":
-            self.label.string.setValues(0, len(text), text)
-        elif text.__class__.__name__ == "string":
-            self.label.string.setValue(text)
-
-        self.sceneRoot.addChild(self.labelSep)
-        self.labelSep.addChild(self.labelFont)
-        self.labelSep.addChild(self.labelTransform)
-        self.labelSep.addChild(self.colorBlack)
-        self.labelSep.addChild(self.label)
-
-    def addLine(self, V1, V2, shapeName="Line", colour="black"):
-        # add a line element to the document and set its points
-        # (debugging use)
-
-        if localDisp(V1, V2) < 1e-15:
-            print("zero-length line warning")
-            return
-        line = Part_app.LineSegment()
-        line.StartPoint = (V1.x, V1.y, V1.z)
-        line.EndPoint = (V2.x, V2.y, V2.z)
-        lineViewObject = self.modelDoc.addObject("Part::Feature", shapeName)
-        lineViewObject.Shape = line.toShape()
-        modelDocObjectListLast = len(self.modelDoc.Objects) - 1
-        lineNode = F_GUI.subgraphFromObject(
-            self.modelDoc.Objects[modelDocObjectListLast]
-        )
-        lineSep = coin.SoSeparator()
-        self.sceneRoot.addChild(lineSep)
-        lineSep.addChild(lineNode)
-        lineSep.addChild(self.colorMap[colour.lower()])
-
-    def addPoints(self, P, colour="black", marker=None):
-        # possible to supply either FreeCAD Part::Shape Vertices or individual/list of cartesian tuple Point
-
-        if P.__class__.__name__ == "Shape":
-            # vertexFromObj = [i.Point for i in P.Vertexes]
-            vertexFromObj = [[i.Point.x, i.Point.y, i.Point.z] for i in P.Vertexes]
-        if P.__class__.__name__ == "Point":
-            vertexFromObj = [
-                [P.x, P.y, P.z],
-            ]
-        if P.__class__.__name__ == "list":
-            if len(P) > 0:
-                if P[0].__class__.__name__ == "Point":
-                    # vertexFromObj = P
-                    vertexFromObj = [[i.x, i.y, i.z] for i in P]
-            else:
-                print("viewscene.addPoints() zero points given")
-                return
-
-        novelSceneCoords = coin.SoCoordinate3()
-        novelSceneCoords.point.setValues(0, len(vertexFromObj), vertexFromObj)
-
-        pointSep = coin.SoSeparator()
-        self.sceneRoot.addChild(pointSep)
-        pointSep.addChild(novelSceneCoords)
-        pointSep.addChild(self.colorMap[colour.lower()])
-
-        if not marker:
-            pointSep.addChild(self.sceneMarkers)
-        else:
-            sceneMarkers = coin.SoMarkerSet()
-            if marker == "cross7":
-                sceneMarkers.markerIndex = coin.SoMarkerSet.CROSS_7_7
-            elif marker == "cross5":
-                sceneMarkers.markerIndex = coin.SoMarkerSet.CROSS_5_5
-            elif marker == "diamond7":
-                sceneMarkers.markerIndex = coin.SoMarkerSet.DIAMOND_FILLED_7_7
-            elif marker == "diamond5":
-                sceneMarkers.markerIndex = coin.SoMarkerSet.DIAMOND_FILLED_5_5
-            elif marker == "diamond9":
-                sceneMarkers.markerIndex = coin.SoMarkerSet.DIAMOND_FILLED_9_9
-            elif marker == "diamondhollow9":
-                sceneMarkers.markerIndex = coin.SoMarkerSet.DIAMOND_LINE_9_9
-            elif marker == "star7":
-                sceneMarkers.markerIndex = coin.SoMarkerSet.STAR_7_7
-            elif marker == "circlehollow9":
-                sceneMarkers.markerIndex = coin.SoMarkerSet.CIRCLE_LINE_9_9
-            elif marker == "square9":
-                sceneMarkers.markerIndex = coin.SoMarkerSet.SQUARE_FILLED_9_9
-            elif marker == "triangle9":
-                sceneMarkers.markerIndex = coin.SoMarkerSet.TRIANGLE_FILLED_9_9
-            elif marker == "circle9":
-                sceneMarkers.markerIndex = coin.SoMarkerSet.CIRCLE_FILLED_9_9
-            pointSep.addChild(sceneMarkers)
-
-        self.pointCoordsList.append(novelSceneCoords)
-
-    def removeShape(self, shapeName):
-        """delete referenced object from FreeCAD model space"""
-        if shapeName in self.shapeNameList:
-            node = self.shapeNameList.index(shapeName)
-            node = self.shapeNodeList[node]
-            self.sceneRoot.removeChild(node)
-            self.modelDoc.removeObject(shapeName)
-            self.modelDoc.recompute()
-            self.shapeNameList.remove(shapeName)
-            self.shapeNodeList.remove(node)
-
-    def saveIV(self, IVpathName):
-        """write IV format"""
-        splitPath = os.path.split(IVpathName)
-        if not os.path.exists(splitPath[0]):
-            print(self.name + " scene IV path failure: " + splitPath[0])
-            return
-        if os.path.exists(splitPath[1]):
-            print(self.name + " scene IV path overwrite: " + splitPath[0])
-        try:
-            with open(IVpathName, "w") as outBuffer:
-                F_GUI.exportSubgraph(self.sceneRoot, outBuffer, "IV")  # VRML, not IV
-                outBuffer.close()
-                print(self.name + " scene IV file written")
-        except OSError as e:
-            print(f"{type(e)}: {e}")
-            print(self.name + " scene IV file write failure to " + IVpathName)
-
-    def saveFCstd(self, pathName):
-        """write FCstd format, saves geometry structure that can be read by FreeCAD"""
-        splitPath = os.path.split(pathName)
-        if not os.path.exists(splitPath[0]):
-            print(self.name + " scene FCstd path failure: " + splitPath[0])
-            return
-        if os.path.exists(splitPath[1]):
-            print(self.name + " scene FCstd path overwrite: " + splitPath[0])
-        try:
-            self.modelDoc.recompute()
-            self.modelDoc.FileName = pathName
-            self.modelDoc.save()
-        except OSError as e:
-            print(f"{type(e)}: {e}")
-            print(self.name + " model document file write failure to " + pathName)
-
-    def loadIV(self, IVpathName):
-        """read IV format"""
-        # filepath sanity check
-        checkPath = glob.glob(IVpathName)
-        if len(checkPath) != 1:
-            raise Exception("pathname failure")
-        else:
-            readAgent = coin.SoInput()
-            readAgent.openFile(IVpathName)
-            self.sceneRoot = coin.SoDB.readAll(readAgent)
-            readAgent.closeFile()
+isVerbose = False
+viewerFlag = False
+generativeSceneFlag = False
+DesernoSphereCache = {}
+TammesSphereCache = {}
 
 
 class STEPmodel(object):
-    """class and methods to encapsulate objects and methods unique to FreeCAD environment"""
+    """Model features backed by standalone Open CASCADE geometry"""
 
     def __init__(self):
         self.objectHandle = (
@@ -531,288 +133,52 @@ class STEPmodel(object):
         self.centrePoints = []
 
     # noinspection PyTypeChecker
-    def importSTEPmodel(
-        self,
-        filepath="",
-        insertionPoint=Point(0.0, 0.0, 0.0),
-        scale=1,
-        rotation=0.0,
-        rotationAxis=[],
-    ):
-        """
-        FreeCAD dependent
+    def importSTEPmodel(self, filepath=None, insertionPoint=None, scale=None,
+                        rotation=None, rotationAxis=None):
+        """Load bounded STEP geometry and apply scale, rotation, then translation."""
+        if filepath is not None:
+            self.filepath = os.path.abspath(filepath)
+        if insertionPoint is not None:
+            self.insertionPoint = Point(*insertionPoint)
+        if scale is not None:
+            self.scale = float(scale)
+        if rotation is not None:
+            self.rotation = float(rotation)
+        if rotationAxis is not None:
+            self.rotationAxis = list(rotationAxis)
+        axis = self.rotationAxis or [0, 0, 1]
+        if not np.isfinite(self.rotation):
+            raise GeometryError("Rotation must be finite")
+        if not np.all(np.isfinite(axis)) or len(axis) != 3:
+            raise GeometryError("Rotation axis must have three finite coordinates")
+        if np.linalg.norm(axis) == 0:
+            if self.rotation != 0:
+                raise GeometryError("Nonzero rotation requires a nonzero axis")
+            axis = [0, 0, 1]
+        self.rotationAxis = axis
+        self.rotationMatrix = angleAxis2RotMat(axis, math.radians(self.rotation))
+        self.objectHandle = Geometry.read_step(
+            self.filepath, self.insertionPoint, self.scale, self.rotationMatrix)
+        self.name = os.path.basename(self.filepath)
 
-        :param filepath: string
-        :param insertionPoint: {x,y,z} Cartesian tuple, not equivalent to centroid
-        :param scale: floating point scalar
-        :param rotation: floating point scalar for Rhino degree value (0.0 <= rotation <= 360.0)
-        :param rotationAxis:
-        """
-
-        # get default values from existing object or replace default initialisation values with given parameters
-        if (filepath == "") and not (self.filepath == ""):
-            filepath = self.filepath
-        elif self.filepath == "":
-            self.filepath = filepath
-
-        if (insertionPoint == Point(0.0, 0.0, 0.0)) and not (
-            self.insertionPoint == Point(0.0, 0.0, 0.0)
-        ):
-            insertionPoint = self.insertionPoint
-        elif self.insertionPoint == Point(0.0, 0.0, 0.0):
-            self.insertionPoint = insertionPoint
-
-        if (scale == 1) and not (self.scale == 1):
-            scale = self.scale
-        elif self.scale == 1:
-            self.scale = scale
-
-        if (rotation == 0.0) and not (self.rotation == 0.0):
-            rotation = self.rotation
-        elif self.rotation == 0.0:
-            self.rotation = rotation
-
-        if (rotationAxis == []) and not (self.rotationAxis is None):
-            rotationAxis = self.rotationAxis
-        elif self.rotationAxis is None:
-            self.rotationAxis = rotationAxis
-
-        if self.name == "":
-            self.name = os.path.basename(filepath)
-
-        # def angleAxisTranslate2AffineMat(rotAxis, theta, disp):
-        #     """
-        #     Affine transformation matrix from 3x3 rotation matrix and displacement vector.
-        #     3x3 rotation matrix derived from CCW angle theta around axis
-        #     From: http://en.wikipedia.org/wiki/Rotation_matrix#Axis_and_angle & transform3d
-        #
-        #     :param rotAxis: axis of rotation vector axis emanating from origin
-        #     :param theta: scalar angle of rotation
-        #     :param disp: displacement from origin point, presumed (0,0,0)
-        #     :return: 4x4 matrix representing affine transformation
-        #     """
-        #
-        #     s = sin(theta); c = cos(theta); C = (1 - c)
-        #
-        #     xs = rotAxis[0] * s; ys = rotAxis[1] * s; zs = rotAxis[2] * s
-        #
-        #     xC = rotAxis[0] * C; yC = rotAxis[1] * C; zC = rotAxis[2] * C
-        #
-        #     xyC = rotAxis[0] * yC; yzC = rotAxis[1] * zC; zxC = rotAxis[2] * xC
-        #
-        #     xxC = rotAxis[0] * xC; yyC = rotAxis[1] * yC; zzC = rotAxis[2] * zC
-        #
-        #     return F_app.Matrix(xxC + c, xyC - zs, zxC + ys, disp[0],
-        #                         xyC + zs, yyC + c, yzC - xs, disp[1],
-        #                         zxC - ys, yzC + xs, zzC + c, disp[2],
-        #                         0,        0,        0,       1      )
-
-        try:
-            # filepath sanity check
-            checkPath = glob.glob(filepath)
-            if len(checkPath) != 1:
-                raise Exception("pathname failure")
-            else:
-                self.objectHandle = Part_app.read(filepath)
-
-            if not self.objectHandle.isValid():
-                raise Exception("imported STEP file fails geometry checks")
-
-            if self.objectHandle.check():
-                print("imported STEP file passes detailed geometry shape.check()")
-
-            if not self.objectHandle.isClosed():
-                raise Exception("imported STEP file fails closed geometry checks")
-
-            # uniform scaling
-            if scale - 1.0 >= eps:
-                scalingMatrix = F_app.Matrix()
-                scalingMatrix.scale(scale, scale, scale)
-                self.objectHandle = self.objectHandle.transformGeometry(scalingMatrix)
-
-            # shape rotation
-            # if math.fabs(rotation) > eps:
-            if not rotationAxis:
-                # rotationAxis = F_app.Vector(0.0, 0.0, 1.0)  # Z-axis
-                rotationAxis = [0.0, 0.0, 0.0]
-
-            self.rotationMatrix = angleAxis2RotMat(rotationAxis, math.radians(rotation))
-            self.objectHandle.Placement.Matrix = F_app.Matrix(
-                self.rotationMatrix[0][0],
-                self.rotationMatrix[0][1],
-                self.rotationMatrix[0][2],
-                self.insertionPoint.x,
-                self.rotationMatrix[1][0],
-                self.rotationMatrix[1][1],
-                self.rotationMatrix[1][2],
-                self.insertionPoint.y,
-                self.rotationMatrix[2][0],
-                self.rotationMatrix[2][1],
-                self.rotationMatrix[2][2],
-                self.insertionPoint.z,
-                0,
-                0,
-                0,
-                1,
-            )
-
-        except Exception as e:
-            raise RuntimeError("Model insertion failure")
+    def _intersections(self, V1, V2, forward):
+        points = [Point(*p) for p in self.objectHandle.intersections(V1, V2, forward)]
+        for point in points:
+            if point not in self.surfacePoints:
+                self.surfacePoints.append(point)
+        return points
 
     def rayModelIntersection(self, V1, V2):
-        """
-        Returns the vertex that is at the intersection of the face
-        and the line that passes through vertex1 and vertex2
-
-        :param V1: origin of ray
-        :param V2: direction of ray
-        :return:
-        """
-
-        # Define a faraway extent that allows FreeCAD to approximate an infinite ray for intersection points.
-        FreeCADEXTENTS = 100  # calculation speed sensitive to this scaling value
-        # not required for rayModelIntersection3()
-
-        # input variable check, vertices must be of Point type
-        for v in [V1, V2]:
-            if v.__class__.__name__ == "Shape":
-                v = Point(v.Vertexes.Point.x, v.Vertexes.Point.y, v.Vertexes.Point.z)
-
-        # offset V1 to cartesian origin, (0, 0, 0), move V2 accordingly
-        _V2 = Point(V2.x - V1.x, V2.y - V1.y, V2.z - V1.z)
-        lenV = sqrt(_V2.x**2 + _V2.y**2 + _V2.z**2)
-        unitV = Point(_V2.x / lenV, _V2.y / lenV, _V2.z / lenV)
-        farV2 = Point(
-            FreeCADEXTENTS * unitV.x, FreeCADEXTENTS * unitV.y, FreeCADEXTENTS * unitV.z
-        )
-        farV1 = Point(-farV2.x, -farV2.y, -farV2.z)
-        farV2 = Point(farV2.x + V1.x, farV2.y + V1.y, farV2.z + V1.z)
-        farV1 = Point(farV1.x + V1.x, farV1.y + V1.y, farV1.z + V1.z)
-
-        # """
-        # Redefine second vertex as the second vertex projected to the surface
-        # of a large sphere centered at the first vertex.
-        #
-        # :param V1: origin of ray
-        # :param V2: direction of ray, to be moved to far model extents
-        # :param sphereR: radius of far model extents
-        # :return: redefined V2
-        # """
-
-        ray = Part_app.makeLine(
-            (farV1.x, farV1.y, farV1.z), (farV2.x, farV2.y, farV2.z)
-        )
-        intersections = ray.common(self.objectHandle)
-        # if intersections.Vertexes:
-        #     [print(i.Point.x, i.Point.y, i.Point.z) for i in intersections.Vertexes]
-        intersections = [
-            Point(i.Point.x, i.Point.y, i.Point.z) for i in intersections.Vertexes
-        ]
-        # if vertex1 in intersections:
-        #     intersections.remove(vertex1)
-        if intersections:
-            [
-                self.surfacePoints.append(i)
-                for i in intersections
-                if i not in self.surfacePoints
-            ]
-
-        return intersections
+        """Intersections on the full line through V1 and V2."""
+        return self._intersections(V1, V2, False)
 
     def rayModelIntersection2(self, V1, V2):
-        """
-        Returns the vertex that is at the intersection of the face
-        and the line that passes through vertex1 and vertex2
-
-        :param V1: origin of ray
-        :param V2: direction of ray
-        :return:
-        """
-
-        # Define a faraway extent that allows FreeCAD to approximate an infinite ray for intersection points.
-        FreeCADEXTENTS = 300  # calculation speed sensitive to this scaling value
-        # not required for rayModelIntersection3()
-
-        # input variable check, vertices must be of Point type
-        # for v in [V1, V2]:
-        #     if v.__class__.__name__ == 'Shape':
-        #         v = Point(v.Vertexes.Point.x, v.Vertexes.Point.y, v.Vertexes.Point.z)
-
-        # offset V1 to cartesian origin, (0, 0, 0), move V2 accordingly
-        _V2 = Point(V2.x - V1.x, V2.y - V1.y, V2.z - V1.z)
-        lenV = sqrt(_V2.x**2 + _V2.y**2 + _V2.z**2)
-        unitV = Point(_V2.x / lenV, _V2.y / lenV, _V2.z / lenV)
-        farV2 = Point(
-            FreeCADEXTENTS * unitV.x, FreeCADEXTENTS * unitV.y, FreeCADEXTENTS * unitV.z
-        )
-        # farV1 = Point(-farV2.x, -farV2.y, -farV2.z)
-        farV2 = Point(farV2.x + V1.x, farV2.y + V1.y, farV2.z + V1.z)
-        # farV1 = Point(farV1.x + V1.x, farV1.y + V1.y, farV1.z + V1.z)
-
-        # """
-        # Redefine second vertex as the second vertex projected to the surface
-        # of a large sphere centered at the first vertex.
-        #
-        # :param V1: origin of ray
-        # :param V2: direction of ray, to be moved to far model extents
-        # :param sphereR: radius of far model extents
-        # :return: redefined V2
-        # """
-
-        intersectSet = []
-        ray = Part_app.makeLine((V1.x, V1.y, V1.z), (farV2.x, farV2.y, farV2.z))
-        intersections = ray.common(self.objectHandle)
-        if intersections.Vertexes:
-            for iv in intersections.Vertexes:
-                if not (
-                    (abs(iv.Point.x - V1.x) < eps)
-                    and (abs(iv.Point.y - V1.y) < eps)
-                    and (abs(iv.Point.z - V1.z) < eps)
-                ):
-                    if (
-                        (abs(iv.Point.x - farV2.x) < eps)
-                        and (abs(iv.Point.y - farV2.y) < eps)
-                        and (abs(iv.Point.z - farV2.z) < eps)
-                    ):
-                        print(
-                            "WARNING: far model intersection constant likely to have been exceeded by model extents"
-                        )
-                    else:
-                        intersectSet.append(Point(iv.Point.x, iv.Point.y, iv.Point.z))
-
-            [
-                self.surfacePoints.append(i)
-                for i in intersectSet
-                if i not in self.surfacePoints
-            ]
-
-        return intersectSet
-
-        # face.Surface.intersect(edge.Curve)[0][0] should look like
-        # face.Shape.Surface.intersect(edge.Curve)[0][0] if working with objects
+        """Forward ray from V1 through V2, excluding the origin."""
+        return self._intersections(V1, V2, True)
 
     def rayModelIntersection3(self, V1, V2):
-        """
-        Returns the vertex that is at the intersection of the face
-        and the line that passes through vertex1 and vertex2
-
-        :param V1: origin of ray
-        :param V2: direction of ray
-        :return:
-        """
-
-        ray = Part_app.makeLine(V1, V2)
-        # extract the curve from the ray, then test intersections with shape faces
-        allFaceSets = [ray.Curve.intersect(f.Surface) for f in self.objectHandle.Faces]
-        intersectPoints = [x for face in allFaceSets for x in face if x]
-        intersectPoints = [x for face in intersectPoints for x in face]
-        intersectPoints = [Point(p.X, p.Y, p.Z) for p in intersectPoints]
-        [
-            self.surfacePoints.append(i)
-            for i in intersectPoints
-            if i not in self.surfacePoints
-        ]
-        return intersectPoints
+        """Full-line intersection with bounded faces (legacy method alias)."""
+        return self.rayModelIntersection(V1, V2)
 
     def printModelAlignment(self):
         """
@@ -927,7 +293,7 @@ def displayPointFC(P, colour, sceneInstance, marker=None):
     # noinspection GrazieInspection
     """
     create visible point, or set of points within coin3d display GUI
-    FreeCAD, Pivy dependent
+    Optional scene protocol hook retained for future visualization.
     Some of Open Inventor markers defined, see
     https://www.openinventor.com/reference-manuals/NewRefMan9912/RefManJava/com/openinventor/inventor/nodes/SoMarkerSet.MarkerTypes.html
 
@@ -961,7 +327,7 @@ def displayPointFC(P, colour, sceneInstance, marker=None):
 def projectVector(pPoint, modelObject, pVector):
     """
     Wrapper for CAD projection function RhinoInstance.ProjectPointToSurface
-    FreeCAD dependent
+    Uses the standalone geometry adapter.
 
     :param pPoint: cartesian point
     :param modelObject: CAD object reference
@@ -2588,7 +1954,7 @@ def circleFit(p, scene=None):
     :return: c2, circle centre point, r, circle radius
     """
 
-    x = np.asfarray(p)
+    x = np.asarray(p, dtype=float)
     x = x.reshape(-1, 3)
 
     B = np.empty((x.shape[0], 4), dtype=x.dtype)
@@ -3451,7 +2817,7 @@ def searchFeatures(
     # localCentroid = meanPoint(circleCluster)
     ShapeInstance.centroid = localCentroid
     if clusteredFeatureTally < 3:
-        print("inadequate definition warning")
+        printVerbose("Few feature points; registration will also evaluate CAD geometry")
 
 
 def randomDistIntersects(ShapeInstance, resolution, featureType, rotation=0.0):
@@ -3672,7 +3038,7 @@ def createDispSignature(shapeInstance):
     featureMinDisps = localDisp(shapeInstance.featureMinPoints, shapeInstance.centroid)
     rotSymRidgeDisps = shapeInstance.featureMaxCurveDisps
     rotSymGrooveDisps = shapeInstance.featureMinCurveDisps
-    sphereDisps = localDisp(shapeInstance.spherePoints, shapeInstance.centroid)
+    sphereDisps = shapeInstance.featureSphereDisps
 
     FMaxPLen = len(featureMaxDisps)
     RSRidgePLen = len(rotSymRidgeDisps)
@@ -3776,85 +3142,29 @@ def normFloatList(L):
 
 
 def distanceMeasure(source, target, methodName="Correlation"):
-    """
-    Representing binned shape feature data as a one-dimensional histogram allows direct comparison of shape data
-    independent of affine transformations between geometric shapes.
-    distanceMeasure() encapsulates several methods used to evaluate similarity or distance between histograms from
-    SciPy library. Given a source array, return the normalised distance from the target array.
-    Unequal arrays are padded with zeros to the size of the larger array
-    Returned factor normalised to [0, 1] st 1 => source = target
-
-    This version mixes point and curve histograms, sorts by distance
-    Then removes matches that do not have corresponding curve/point information
-
-    :param source: source histogram as list
-    :param target: single target histograms list
-    :param methodName: method name
-    :return: distance scalar
-    """
-
-    def padList(L1, L2):
-        """
-        Pad shorter list with zeros to src longer list
-        Add values to map index
-        """
-        # values extending beyond initial indices will not be within mapped values => safe
-        if len(L1) > len(L2):
-            [L2.append(0.0) for r in range(len(L2), len(L1))]
-            [L2.append(r) for r in range(len(L2), len(L1))]
-        elif len(L2) > len(L1):
-            [L1.append(0.0) for r in range(len(L1), len(L2))]
-            [L1.append(r) for r in range(len(L1), len(L2))]
-
-        return L1, L2
-
-    # import cv2
-    # OPENCV_METHODS = {
-    #     "Correlation": cv2.HISTCMP_CORREL,
-    #     "Chi-Squared": cv2.HISTCMP_CHISQR,
-    #     "Intersection": cv2.HISTCMP_INTERSECT,
-    #     "Hellinger": cv2.HISTCMP_BHATTACHARYYA}
-
-    # scipy distance metric methods
-    # from scipy.spatial import distance as scipyDist
-
-    # dist.minkowski(u, v, p)
-    #   {||u-v||}_p = (\\sum{|u_i - v_i|^p})^{1/p}.
-    # p : int
-    #    The order of the norm of the difference :math:`{||u-v||}_p`.
-
-    SCIPY_METHODS = {
-        "Euclidean": scipyDist.euclidean,
-        "Manhattan": scipyDist.cityblock,
-        "Chebyshev": scipyDist.chebyshev,
-        "Braycurtis": scipyDist.braycurtis,
-        "Correlation": scipyDist.correlation,
-        "Sqeuclidean": scipyDist.sqeuclidean,
-        "Cosine": scipyDist.cosine,
-        "Cityblock": scipyDist.cityblock,
+    """Distance between normalized descriptors; signed cancellation is not equality."""
+    methods = {
+        "Euclidean": scipyDist.euclidean, "Manhattan": scipyDist.cityblock,
+        "Chebyshev": scipyDist.chebyshev, "Braycurtis": scipyDist.braycurtis,
+        "Correlation": scipyDist.correlation, "Sqeuclidean": scipyDist.sqeuclidean,
+        "Cosine": scipyDist.cosine, "Cityblock": scipyDist.cityblock,
         "Canberra": scipyDist.canberra,
     }
-
-    # source[0] = normFloatList(source[0])
-    # if methodName in OPENCV_METHODS.keys():
-    #     # compute distance between source & target histograms
-    #     target[0] = normFloatList(target[0])
-    #     normS, normT = padList(source, target)
-    #     dist = cv2.compareHist(normS[0], normT[0], OPENCV_METHODS[methodName])
-
-    if methodName in SCIPY_METHODS.keys():
-        # compute distance between source & target histograms
-        normS = normFloatList(source[0])
-        normT = normFloatList(target[0])
-        normS, normT = padList(normS, normT)
-        if np.sum(np.array(normS) - np.array(normT)) < eps:
-            return 0.0
-        dist = SCIPY_METHODS[methodName](normS, normT)
-
-    else:
-        raise RuntimeError("distanceRank() unknown methodName")
-
-    return dist
+    if methodName not in methods:
+        raise ValueError("Unknown histogram distance: " + methodName)
+    a, b = normFloatList(source[0]), normFloatList(target[0])
+    size = max(len(a), len(b))
+    a = np.pad(a, (0, size - len(a)))
+    b = np.pad(b, (0, size - len(b)))
+    if np.allclose(a, b, rtol=1e-12, atol=1e-14):
+        return 0.0
+    # Correlation is undefined for constant vectors. Different descriptors with
+    # no defined correlation must not acquire a perfect-match score or NaN.
+    if methodName == "Correlation" and (np.std(a) < eps or np.std(b) < eps):
+        return 1.0
+    if methodName == "Cosine" and (np.linalg.norm(a) == 0 or np.linalg.norm(b) == 0):
+        return 1.0
+    return float(methods[methodName](a, b))
 
 
 def distanceRank2(source, targetList, methodName="Correlation"):
@@ -3916,11 +3226,11 @@ def distanceRank2(source, targetList, methodName="Correlation"):
                     dist = 1 - dist / distNorm
                 rankList.append(dist)
             elif 1.0 > LTOM >= 0.6:
-                input("distanceRank weirdness?")
+                rankList.append(LTOM)
             else:
                 rankList.append(0.0)  # check similarity = 1.0 or 0.0
         rankList = sorted(
-            rankList, reverse=methodName not in ("Correlation", "Intersection")
+            rankList, reverse=methodName in ("Correlation", "Intersection")
         )
         return rankList
 
@@ -4064,7 +3374,7 @@ def listTypeOrderMatch(A, B):
         combinesDecision += min((PminA + CminA), (PminB + CminB))
         decisionSum += max((PminA + CminA), (PminB + CminB))
 
-    combinesDecision /= decisionSum
+    combinesDecision = combinesDecision / decisionSum if decisionSum else individualDecision
 
     # if (SA > 0) and (SB > 0):
     #     combinesDecision += min(SA, SB) / max(SA, SB)
@@ -4109,6 +3419,9 @@ def listIntersection2(Ashape, Bshape, tol=1e-2):
     A = np.array(DS[0])
     B = np.array(DS[1])
 
+    if not len(A) or not len(B):
+        return [], [], 1.0, math.inf
+
     if A.shape[0] >= B.shape[0]:
         HL = A
         HS = B
@@ -4136,26 +3449,36 @@ def listIntersection2(Ashape, Bshape, tol=1e-2):
     normDiff = []
     subsetIndex = []
     scaleList = []
+    validCombinations = []
 
     for sci in subsetCombIndex:
         subsetHL = HL[list(sci)]
-        scaleDiff = np.abs(subsetHL / HS)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            scaleDiff = np.abs(subsetHL / HS)
+        valid = np.isfinite(scaleDiff) & (scaleDiff > 0)
+        if not np.any(valid):
+            continue
         # trim outliers that fall outside 2x standard deviations
-        scaleDiffNorm = abs(scaleDiff - np.mean(scaleDiff))
+        scaleDiffNorm = abs(scaleDiff - np.mean(scaleDiff[valid]))
         trimSubset = np.array(range(0, len(scaleDiff)))[
-            scaleDiffNorm <= 2 * np.std(scaleDiff)
+            valid & (scaleDiffNorm <= 2 * np.std(scaleDiff[valid]))
         ]
         # trimSubset = [di for di, dv in enumerate(scaleDiff) if (dv > np.quantile(scaleDiff, 0.05)) and (dv < np.quantile(scaleDiff, 0.95))]
         trimSubsetHL = [sci[ts] for ts in trimSubset]
+        if not len(trimSubset):
+            continue
         scale = np.quantile(scaleDiff[trimSubset], 0.5)
         diffSet = np.abs((HL[trimSubsetHL] / scale) - HS[trimSubset])
         normDiff.append(np.sum(diffSet) / diffSet.shape[0])
         subsetIndex.append(trimSubset)
         scaleList.append(scale)
+        validCombinations.append(sci)
 
+    if not normDiff:
+        return [], [], 1.0, math.inf
     minDiff = normDiff.index(min(normDiff))
     # the index to the longer histogram taken from the combinational search
-    subsetHLindex = np.array(subsetCombIndex[minDiff])
+    subsetHLindex = np.array(validCombinations[minDiff])
     # the subset of the combinational subset that returns the minimum scale variation
     subsubsetIndex = subsetIndex[minDiff].tolist()
     subsetHLindex = subsetHLindex[subsubsetIndex].tolist()
@@ -4168,54 +3491,14 @@ def listIntersection2(Ashape, Bshape, tol=1e-2):
 
 
 def rigidTransform3D(A, centroidA, B, centroidB):
+    """Proper rigid fit to paired 3-by-N points.
+
+    centroidA/centroidB remain accepted for API compatibility; model centroid
+    estimates are not the means of the paired points and cannot center this fit.
     """
-    Given two sets of points, find the best rotation and translation to align them.
-    See also [Kabsch, 1976] Kabsch, W. (1976). A solution for the best rotation to relate two sets of vectors.
-    Acta. Crystal, 32A:922-923.
-    [Kabsch, 1978] Kabsch, W. (1978). A discussion of the solution for the best rotation to related
-    two sets of vectors. Acta. Crystal, 34A:827-828.
-
-    Use Singular Value Decomposition to determine rotation matrix.
-    Liberally borrowed from http://nghiaho.com/?page_id=671
-    R = 3x3 rotation matrix
-    t = 3x1 column vector
-
-    :param A: set of 3D points
-    :param centroidA: centroid of points within A
-    :param B: set of 3D points
-    :param centroidB: centroid of points within B
-    :return: R: rotation matrix
-             t: transpose vector
-    """
-
-    A = np.mat(A.T)
-    B = np.mat(B.T)
-    assert len(A) == len(B)
-    N = A.shape[0]  # total points
-
-    # should centroids be imported from Shape object?-----------------------
-    centroid_A = np.mat(Point2XYZarray(centroidA).T)
-    centroid_B = np.mat(Point2XYZarray(centroidB).T)
-
-    # centre the points
-    AA = A - np.tile(centroid_A, (N, 1))
-    BB = B - np.tile(centroid_B, (N, 1))
-
-    H = np.transpose(AA) * BB  # cross-covariance matrix A = Pt * Q
-
-    U, S, Vt = np.linalg.svd(H)
-
-    dSign = np.linalg.det(Vt * U.T)
-
-    if dSign:
-        # S[-1] = -S[-1]
-        # U[:, -1] = -U[:, -1]
-        print("SVD transform reflection detected")
-        # Vt[2, :] *= -1 #-----------------------------------Kabsh doesn't hold here?
-
-    R = Vt.T * U.T
-    t = -R * centroid_A.T + centroid_B.T
-    return R, t
+    from shapematch_alignment import fit_points
+    rotation, translation, _ = fit_points(np.asarray(A).T, np.asarray(B).T, False)
+    return rotation, translation.reshape(3, 1)
 
 
 def Point2XYZarray(P):
@@ -4259,9 +3542,9 @@ def transformPoints(P, R, t):
     :return: translated & rotated points
     """
 
-    XYZ = np.mat(Point2XYZarray(P))
-    TXYZ = (R * XYZ) + np.tile(t, (1, XYZ.shape[1]))  # ".T" is self transpose
-    return XYZarray2Point(np.array(TXYZ))
+    XYZ = np.asarray(Point2XYZarray(P), dtype=float)
+    TXYZ = np.asarray(R) @ XYZ + np.asarray(t).reshape(3, 1)
+    return XYZarray2Point(TXYZ)
 
 
 def matrix2vectorAngle(M):
@@ -4318,7 +3601,7 @@ def scalePoints(pointList, localCentroid, localScale):
     :param localScale: scale factor
     :return: list of scaled Points
     """
-    xyz = Point2XYZarray(pointList)
+    xyz = np.asarray(Point2XYZarray(pointList), dtype=float)
     xyz[0, :] = np.multiply((xyz[0, :] - localCentroid.x), localScale) + localCentroid.x
     xyz[1, :] = np.multiply((xyz[1, :] - localCentroid.y), localScale) + localCentroid.y
     xyz[2, :] = np.multiply((xyz[2, :] - localCentroid.z), localScale) + localCentroid.z
@@ -4555,6 +3838,8 @@ def leftHandSpiralOrder2(
         uniqueDispIndex = [i for i in range(0, len(targetDisps))]
 
     sourceHelixIndex = LHHelixOrder(sourcePointList, sourceStart, sourceCentroid)
+    if sorted(sourceHelixIndex) != list(range(len(sourcePointList))):
+        return []
     sourceDispsRef = np.array([sourceDisps[shi] for shi in sourceHelixIndex])
 
     # if scene:
@@ -4577,368 +3862,71 @@ def leftHandSpiralOrder2(
         targetHelixIndex = LHHelixOrder(
             targetPointList, targetStartPoint, targetCentroid
         )
-        multiTargetHelixIndex.append(targetHelixIndex)
+        if sorted(targetHelixIndex) == list(range(len(targetPointList))):
+            multiTargetHelixIndex.append(targetHelixIndex)
 
-    # test each target helix generated from equivalent disp start points for matching disp sequence
-    minDispError = []
-    for mthi in multiTargetHelixIndex:
-        # find equivalent point in target set displacements.
-        dispError = np.sum(
-            np.array([targetDisps[thi] for thi in mthi]) - sourceDispsRef
-        )
-        minDispError.append(dispError)
-
-        # if dispError < (len(targetDisps)*tol): # too fussy
-        #     returnList.append(mthi)
-
-    minIndex = minDispError.index(min(minDispError))
-    returnList.append(multiTargetHelixIndex[minIndex])
-    if len(returnList) == 1:
-        # nothing was found
-        return []
-    else:
-        return returnList
+    # Scalar sums can cancel, and radial signatures cannot resolve symmetry.
+    # Return every valid candidate; the caller scores the actual CAD surfaces.
+    return [sourceHelixIndex, *multiTargetHelixIndex] if multiTargetHelixIndex else []
 
 
-def SVDerror(
-    source,
-    target,
-    sourceCP,
-    scaledTargetCP,
-    targetCP,
-    STscale,
-    numberOfPoints,
-    scene=None,
-):
+def SVDerror(source, target, sourceCP, scaledTargetCP, targetCP, STscale,
+             numberOfPoints, scene=None):
+    """Fit a proper similarity and score both CAD boundaries in target units.
+
+    scaledTargetCP is the legacy target-to-source-size representation. Undo
+    that scaling first; fit and return one unambiguous origin-based transform.
     """
-    Using a Singular Value Decomposition method, translate & rotate points from a source model to target model and take
-    displacement from translated & rotated point to equivalent point on target model as displacement error.
-    Select points to test from feature list, in the event that numberOfPoints requested > feature points available,
-    use randomly selected surface points stored from previous shape object operations.
-    To calculate the error of a sampled tranformed point, a ray is projected from the local target centroid, through
-    the transformed point and intersects with teh target object surface. The error is given as displacement between this
-    surface ray intersection and the transformed point.
-
-    :param source: source CAD geometric object
-    :param target: target CAD geometric object
-    :param sourceCP: list of source check points
-    :param scaledTargetCP: list of scaled target check points
-    :param targetCP: list of target check points
-    :param STscale: source/target scale
-    :param numberOfPoints: number of points for error test requested
-    :param scene: coin3d pivy graphical display instance, point display for debug purposes
-    :return: list of individual error displacements
-    """
-
-    #     for p in [0, 1, 2, 3]:
-    #         displayPointFC(sourceCPs[p], 255)
-
-    # for p in [0, 1, 2, 3]:
-    #     displayPointFC(scaledTargetCPs[p], 65280)
-
-    # test for case of torus with single point.
-    if (
-        (len(sourceCP) < 3)
-        and (len(scaledTargetCP) < 3)
-        and (sum([len(source.rotSymRidgePoints), len(source.rotSymGroovePoints)]) > 0)
-        and (sum([len(target.rotSymRidgePoints), len(target.rotSymGroovePoints)]) > 0)
-    ):
-        torusFlag = 1  # torii are represented with 2 or 3 featurePoints, 1 minimum centre, 1 to 2 max centre
-        minCommonPoints = min(
-            [len(source.rotSymRidgePoints), len(target.rotSymRidgePoints)]
-        )
-        # minCommonPoints = min([len(source.featureMaxCentres) + len(source.featureMinCentres), len(target.featureMaxCentres) + len(target.featureMinCentres)])
-        if minCommonPoints == 0:
-            return math.inf, None, None, None
-        else:
-            # featureMaxCentre, featureMinCentre?
-            pointSelect = sample(source.rotSymRidgePoints, minCommonPoints)
-            [sourceCP.append(ps) for ps in pointSelect]
-            pointSelect = sample(target.rotSymRidgePoints, minCommonPoints)
-            pointSelect = scalePoints(pointSelect, target.centroid, 1 / STscale)
-            [scaledTargetCP.append(ps) for ps in pointSelect]
-    else:
-        torusFlag = 0
-
-    rotationMat, translateVector = rigidTransform3D(
-        Point2XYZarray(sourceCP),
-        source.centroid,
-        Point2XYZarray(scaledTargetCP),
-        target.centroid,
-    )
-    printVerbose("\n SVD derived rotation matrix: ")
-    printVerbose(rotationMat)
-
-    printVerbose("\n SVD derived translation vector:")
-    printVerbose([i[0] for i in translateVector.tolist()])
-
-    printVerbose("\n Scale difference:" + str(STscale) + "\n")
-
-    # note that curve centres are not surface points, expunge from list
-    modelErrors = []
-    sourceUniquePoints = [
-        scp
-        for scp in sourceCP
-        if (scp not in source.featureMaxCentres)
-        and (scp not in source.featureMinCentres)
-    ]
-    if len(sourceUniquePoints) > 0:
-        sourceUniquePoints = scalePoints(sourceUniquePoints, source.centroid, STscale)
-        checkSourcePoints = transformPoints(
-            sourceUniquePoints, rotationMat, translateVector
-        )
-
-        if scene:
-            colorList = [
-                "red",
-                "green",
-                "lime",
-                "blue",
-                "yellow",
-                "purple",
-                "cyan",
-                "white",
-                "black",
-                "grey",
-                "maroon",
-                "navy",
-                "olive",
-                "silver",
-                "teal",
-                "orange",
-                "lightblue",
-            ]
-            printVerbose(
-                "SVD debug source: " + source.name + " & target: " + target.name
-            )
-            printVerbose(" SVD feature point offset________________________")
-
-        # for pi, pv in enumerate(sourceUniquePoints):
-        #       displayPointFC(pv, colorList[pi % len(colorList)], scene, 'circle9')
-        #       scene.addText(pv, str(pi))
-        #       displayPointFC(checkSourcePoints[pi], colorList[pi % len(colorList)], scene, 'triangle9')
-        #       scene.addText(checkSourcePoints[pi], str(checkSourcePoints[pi]))
-        #       scene.saveIV(scene.name)
-
-        # use each of these translated points to find a correspondence on the target model
-        if not torusFlag:
-            # for csi in range(0, len(checkSourceVectors)):
-            for csi in range(0, len(checkSourcePoints)):
-                # printVerbose("________________________")
-                # printVerbose("predictionTest proj2object vars")
-                # printVerbose(target.filepath)
-                # printVerbose(checkSourcePoints[csi])
-
-                nearbyPoint = proj2object2(
-                    target, checkSourcePoints[csi], target.centroid, "nearest"
-                )
-                if nearbyPoint:
-                    if scene:
-                        modelError = localDisp(nearbyPoint, checkSourcePoints[csi])
-                        # if type(modelError) == type(list()):
-                        #     modelError = min(modelError)
-                        printVerbose("Feature point error: " + str(modelError))
-                        # printVerbose("Feature point error: " + str(min(localDisp(scaledTargetCP, nearbyPoint))))
-                    # print(modelError)
-
-                    # if scene:
-                    #     scene.addLine(checkSourcePoints[csi], nearbyPoint, 'proj', 'lime')
-                    #     displayPointFC(checkSourcePoints[csi], colorList[csi % len(colorList)], scene, 'triangle9')
-                    #     displayPointFC(nearbyPoint, colorList[csi % len(colorList)], scene, 'circle9')
-                    #     scene.saveIV(scene.name)
-
-                    modelErrors.append(min(localDisp(targetCP, nearbyPoint)))
-
-    # repeat process to attain full point complement
-    # append unique feature points from source.surfacePoints if value < numberOfPoints
-    shortfall = numberOfPoints
-    if not torusFlag:
-        shortfall -= len(sourceUniquePoints)
-    if shortfall > 0:
-        # randomly select points
-        sourceUniquePoints = [choice(source.surfacePoints) for _ in range(shortfall)]
-        sourceUniquePoints = scalePoints(sourceUniquePoints, source.centroid, STscale)
-        checkSourcePoints = transformPoints(
-            sourceUniquePoints, rotationMat, translateVector
-        )
-
-        for csi in range(0, len(checkSourcePoints)):
-            # printVerbose("predictionTest proj2object vars")
-            # printVerbose(target.filepath)
-            # printVerbose(checkSourcePoints[csi])
-
-            nearbyPoint = proj2object2(
-                target, checkSourcePoints[csi], target.centroid, "nearest", scene
-            )
-
-            if nearbyPoint:
-                modelError = localDisp(nearbyPoint, checkSourcePoints[csi])
-
-                if scene:
-                    scene.addLine(
-                        checkSourcePoints[csi], nearbyPoint, "proj", colour="lime"
-                    )
-                    displayPointFC(
-                        checkSourcePoints[csi],
-                        colorList[csi % len(colorList)],
-                        scene,
-                        "circlehollow9",
-                    )
-                    displayPointFC(
-                        nearbyPoint, colorList[csi % len(colorList)], scene, "circle9"
-                    )
-                    # scene.saveIV(scene.name)
-
-                printVerbose("Random point error: " + str(modelError))
-                modelErrors.append(modelError)
-    if scene:
-        printVerbose("________________________")
-        scene.saveIV(scene.name)
-
-    return (
-        modelErrors,
-        rotationMat,
-        [x for xs in translateVector.tolist() for x in xs],
-        STscale,
-    )
+    from shapematch_alignment import fit_points, surface_errors
+    actual_target = (np.asarray(scaledTargetCP) - target.centroid) * STscale + target.centroid
+    try:
+        rotation, translation, scale = fit_points(sourceCP, actual_target)
+    except ValueError:
+        return [], None, None, None
+    errors = surface_errors(source.objectHandle, target.objectHandle, rotation, translation, scale,
+                            source.objectHandle.surface_samples(max(96, numberOfPoints * 4)),
+                            target.objectHandle.surface_samples(max(96, numberOfPoints * 4)))
+    # Give each direction equal weight, even when face counts force unequal
+    # sample counts. RMSError of this list is the bidirectional surface RMSE.
+    count = len(errors[0]) + len(errors[1])
+    weighted = np.concatenate([direction * np.sqrt(count / (2 * len(direction))) for direction in errors])
+    return weighted.tolist(), rotation, translation.tolist(), scale
 
 
 def predictionTest5(source, target, numberOfPoints=20, DistThreshold=1e-2, scene=None):
+    """Register without placement metadata and measure both exact CAD boundaries.
+
+    Returns (symmetric RMSE in target units, rotation, translation, scale), with
+    target_point = scale * rotation @ source_point + translation. Feature fits
+    are hypotheses; principal frames fill missing rotational constraints.
     """
-    Use identified shape features to determine geometric shape matching between source & target.
-    - re-revaluate local centroid around feature points (medianCentroidCorrection())
-    - get shapes with subset of common feature points (listIntersection())
-    - scale target histogram to source histogram (scalePoints())
-    - find common lH helical ordering of feature points
-    - return median RMS error of transposed source-target points
-
-    :param scene:
-    :param source: source CAD geometrical object
-    :param target: target CAD geometrical object
-    :param numberOfPoints: number of points used to establish similarity
-    :param DistThreshold: ?? should be tol ?? absolute displacement indicating unique points
-    :return: error value
-    """
-    # use ranked histogram to calculate affine transform, rotation/scaling/translation
-    # get histogram intersection & difference
-
-    sourceCentroidChanged = medianCentroidCorrection(source, tol=0.01)
-    targetCentroidChanged = medianCentroidCorrection(target, tol=0.01)
-
-    # degenerate case of two spheres
-    sourceIsSphere = 0
-    targetIsSphere = 0
-    if (
-        not source.featureMaxPoints
-        and not source.featureMaxCurveDisps
-        and not source.featureMinPoints
-        and not source.featureMinCurveDisps
-        and source.spherePoints
-    ):
-        sourceIsSphere = True
-
-    if (
-        not target.featureMaxPoints
-        and not target.featureMaxCurveDisps
-        and not target.featureMinPoints
-        and not target.featureMinCurveDisps
-        and target.spherePoints
-    ):
-        targetIsSphere = True
-
-    # method ignores spheres comprised of multiple sector radii, another edge case
-    if sourceIsSphere and targetIsSphere:
-        return (
-            1.0,
-            None,
-            localDisp(source.centroid, target.centroid),
-            np.mean(source.featureSphereDisps) / np.mean(target.featureSphereDisps),
-        )
-    elif (sourceIsSphere and not targetIsSphere) or (
-        not sourceIsSphere and targetIsSphere
-    ):
-        return math.inf, None, None, None
-
-    # SnT, TnS, STscale = listIntersection(source, target, tol=1e-2)  # yet another sensitive constant
-    SnT, TnS, STscale, hError = listIntersection2(
-        source, target, tol=1e-2
-    )  # yet another sensitive constant
-
-    printVerbose("scalar histogram comparison max error: " + str(hError))
-
-    if (len(SnT) < 2) or (len(TnS) < 2) or (len(SnT) != len(TnS)):
-        print("Inadequate common points between source and target for comparison")
-        return np.Infinity, None, None, None
-
-    # get Source.featurePoints and Target.featurePoints from SnT, TnS intersection, order is important (src listIntersection())
-    sourcePointSignature = (
-        source.featureMaxPoints
-        + source.featureMaxCentres
-        + source.featureMinPoints
-        + source.featureMinCentres
-        + source.spherePoints
-    )
-    # source.sphereCentre == 0,0,0 => sphere displacements within listIntersection are definitive
-
-    targetPointSignature = (
-        target.featureMaxPoints
-        + target.featureMaxCentres
-        + target.featureMinPoints
-        + target.featureMinCentres
-        + target.spherePoints
-    )
-
-    # dispSignatureIndexed = sorted(enumerate(dispSignature), key=lambda x: x[1], reverse=True)
-    # dispSignatureIndexMap = [i[0] for i in dispSignatureIndexed]
-    # dispSignature = [i[1] for i in dispSignatureIndexed]
-
-    sourceCommonPoints = [sourcePointSignature[s] for s in SnT]
-    targetCommonPoints = [targetPointSignature[t] for t in TnS]
-
-    # points have to be offset by scale from centroid
-    scaledTargetCommonPoints = scalePoints(targetCommonPoints, target.centroid, STscale)
-
-    sourceTargetIndex = leftHandSpiralOrder2(
-        sourceCommonPoints,
-        scaledTargetCommonPoints,
-        source.centroid,
-        target.centroid,
-        tol=5e-2,
-    )
-
-    if not sourceTargetIndex:
-        return np.Infinity, None, None, None
-
-    sourceCommonPoints = [sourceCommonPoints[si] for si in sourceTargetIndex[0]]
-
-    MeanErrorScores = []
-    for targetPointsIndexInstance in sourceTargetIndex[1:]:
-        # find the lowest error matrix rotation
-        scaledTargetCommonPointTrial = [
-            scaledTargetCommonPoints[ti] for ti in targetPointsIndexInstance
-        ]
-
-        # for p in [0, 1, 2, 3]:
-        #     displayPointFC(scaledTargetCommonPointTrial[p], 255, )
-        #     RhinoInstance.AddText(str(p), scaledTargetCommonPointTrial[p])
-        #     pass
-
-        ErrorDisps, rotMat, transVector, scaleDifference = SVDerror(
-            source,
-            target,
-            sourceCommonPoints,
-            scaledTargetCommonPointTrial,
-            targetCommonPoints,
-            1 / STscale,
-            numberOfPoints,
-            scene,
-        )
-        if ErrorDisps:
-            MeanErrorScores.append(RMSError(ErrorDisps))
-        else:
-            return np.Infinity, None, None, None
-
-        return min(MeanErrorScores), rotMat, transVector, STscale
+    from shapematch_alignment import fit_points, register
+    medianCentroidCorrection(source, tol=.01)
+    medianCentroidCorrection(target, tol=.01)
+    a = source.featureMaxPoints + source.featureMaxCentres + source.featureMinPoints + source.featureMinCentres
+    b = target.featureMaxPoints + target.featureMaxCentres + target.featureMinPoints + target.featureMinCentres
+    candidates = []
+    if len(a) >= 3 and len(b) >= 3 and not (source.featureSphereDisps or target.featureSphereDisps):
+        source_indices, target_indices, ratio, _ = listIntersection2(source, target)
+        if len(source_indices) >= 3:
+            source_points = [a[i] for i in source_indices]
+            target_points = [b[i] for i in target_indices]
+            scaled_target = scalePoints(target_points, target.centroid, ratio)
+            orders = leftHandSpiralOrder2(source_points, scaled_target, source.centroid, target.centroid, .05)
+            if orders:
+                for order in orders[1:]:
+                    try:
+                        candidates.append(fit_points([source_points[i] for i in orders[0]],
+                                                     [target_points[i] for i in order]))
+                    except ValueError:
+                        continue
+    error, (rotation, translation, scale), errors = register(
+        source.objectHandle, target.objectHandle, candidates, max(96, numberOfPoints * 4))
+    source.alignmentDiagnostics = {
+        "forward_rmse": RMSError(errors[0]), "reverse_rmse": RMSError(errors[1]),
+        "source_samples": len(errors[0]), "target_samples": len(errors[1]),
+    }
+    return error, rotation, translation.tolist(), scale
 
 
 def RMSError(err):
@@ -5088,1171 +4076,30 @@ def printModelAlignment2(insertionPoint, scale, rotation, rotationAxis):
 
 
 def shape2pickle(ShapeInstance, CacheDir):
-    # script flakiness => save each model separately in a folder
-    # n = datetime.now()
-    # fName = ShapeInstance.name[:-4] + '_' + str(n.month) + '_' + str(n.day) + '_' + str(n.hour) + '_' + str(n.minute) + '.obj'
-    # shapeCacheFilePath = os.path.join(CacheDir, fName)
-    shapeCacheFilePath = fileNameTimeStamp(ShapeInstance.name[:-4], "obj", CacheDir)
-    try:
-        with open(shapeCacheFilePath, "wb") as _:
-            pickle.dump(ShapeInstance, _)
-        printVerbose(
-            ShapeInstance.name[:-4] + " shape written to " + shapeCacheFilePath
-        )
-    except Exception as e:
-        print(
-            ShapeInstance.name[:-4]
-            + " pickle file write failure to "
-            + shapeCacheFilePath
-        )
-
-
-def fileNameTimeStamp(fileNameHead, MSidentifier=None, fDir=None):
-    """
-    Generate a complete file path based on a text string head, with a generated timestamp body and an
-    optional three character Microsoft-style file identifier. Complete pathname optional with supplied
-    directory path
-
-    :param fileNameHead: text string file body
-    :param MSidentifier: three-character file type identifier
-    :param fDir: optional directory pathname
-    :return: file path string
-    """
-    n = dt.now()
-    # datetime.now(timezone.utc)
-    fName = (
-        fileNameHead
-        + "_"
-        + str(n.month)
-        + "_"
-        + str(n.day)
-        + "_"
-        + str(n.hour)
-        + "_"
-        + str(n.minute)
-    )
-    if MSidentifier:
-        fName = fName + "." + MSidentifier
-    if fDir:
-        fName = os.path.join(fDir, fName)
-    return fName
+    """Compatibility name: write a portable JSON feature cache, never a pickle."""
+    from shapematch_cache import save_model
+    from pathlib import Path
+    import uuid
+    target = Path(CacheDir) / (Path(ShapeInstance.filepath).stem + "_" + uuid.uuid4().hex[:12] + ".json")
+    return save_model(ShapeInstance, target)
 
 
 def singleShapePRtest(localCacheDir, shapeDir, file_S=None, file_N=None, file_P=None):
-    """
-    Tests to determine identification of similar models, along with rejection of dissimilar models, saved to CSV file.
-    Three models are used,
-        testModel_S: source model,
-        testModel_P: positive src model, which is a transformed version of source model testModel_S
-        testModel_N: negative src model, which is an untransformed model that is not testModel_S
+    from shapematch_workflows import single_test
+    return single_test(localCacheDir, shapeDir, file_S, file_N, file_P), None
 
-    :param localCacheDir: directory to save pre-processed pickle-format shape object files.
-    :param shapeDir: directory containing geometry shape models
-    :param file_S: pre-calculated source model object, full pathname
-    :param file_P: pre-calculated positive src model, which is a transformed version of source model testModel_S
-    :param file_N: pre-calculated negative src model, which is an untransformed model that is not testModel_S
-    """
 
-    def findExistingShapeData(filepath):
-        """
-        Test shape object for pre-existing pickle file data or max/min feature point data
-        :param filepath: queried shape object file path
-        :return: shapeObject
-        """
-        # test whether shape object already holds shape data before searching for pickled file
-        # shapeCacheFilePath = os.path.join(localCacheDir, filepath)
-        # if (shapeObject.surfacePoints == []) and (shapeObject.centroid == None):
-        #     if len(glob.glob(shapeCacheFilePath)) < 1:  # test file exists
-        #         print("Cannot locate testModel_S: " + shapeCacheFilePath)
-        #         return None
-        #     else:
+def multiShapePRtest(GeomTestCSVFilePath, rankedTestFilePath, shapeCacheDir, debugSceneFlag=0):
+    from shapematch_workflows import multi_test
+    if debugSceneFlag:
+        raise ValueError("Legacy scenegraph export is deferred; use HTML visualization")
+    return multi_test(shapeCacheDir, GeomTestCSVFilePath, rankedTestFilePath)
 
-        try:
-            # with open(os.path.join(localCacheDir, shapeObject.filepath), 'rb') as _f:
-            with open(filepath, "rb") as _:
-                shapeObject = pickle.load(_)  # retrieve STEPmodel object
-                if (shapeObject.surfacePoints == []) and (shapeObject.centroid is None):
-                    if len(glob.glob(shapeCacheFilePath)) < 1:  # test file exists
-                        print("testModel_S object pickle file empty")
-                        return None
-                # import model into FreeCAD model space
-                shapeObject.importSTEPmodel(
-                    shapeObject.filepath,
-                    shapeObject.insertionPoint,
-                    shapeObject.scale,
-                    shapeObject.rotation,
-                    shapeObject.rotationAxis,
-                )
-                printVerbose("shape data retrieved from: " + shapeObject.name[:-4])
-                return shapeObject
-        except Exception as e:
-            print("Pickle file load failure from " + shapeCacheFilePath)
-            return None
 
-    # create a list of test files
-    shapeFiles = []
-    for root, dirs, files in os.walk(shapeDir):
-        for file in files:
-            if file.endswith(".stp"):
-                shapeFiles.append(os.path.join(root, file))
-
-    # issue with unit_sphere_x8.0.stp from test-set, non-closed. Same issue disappears with rotated unit_sphere_z8.0.stp
-    for file in shapeFiles:
-        if "unit_sphere_x8.0.stp" in file:
-            shapeFiles.remove(file)
-
-    # Create Source test shape (S), default origin position, rotation, scale
-    # test whether shape object already holds shape data before searching for pickled file
-
-    testModel_S = None
-    testModel_N = None
-    testModel_P = None
-
-    if file_S:
-        # shapeCacheFilePath = os.path.join(localCacheDir, file_S) # full path provided
-        shapeCacheFilePath = file_S
-        testModel_S = findExistingShapeData(shapeCacheFilePath)
-        if testModel_S:
-            printVerbose("Source model insertion: " + shapeCacheFilePath)
-            shapeInsertionPoint = testModel_S.insertionPoint
-            shapeScale = testModel_S.scale
-            shapeRotation = testModel_S.rotation
-            shapeRotationAxis = testModel_S.rotationAxis
-
-    if not testModel_S:
-        shapeInsertionPoint = Point(uniform(0, 10), uniform(0, 10), uniform(0, 10))
-        shapeScale = uniform(5, 15)
-        shapeRotation = uniform(0, 360)
-        shapeRotationAxis = [random(), random(), random()]
-
-        while testModel_S is None:
-            file_S = shapeFiles[randint(0, len(shapeFiles) - 1)]
-            # file_S = r"E:\PY_DELL2\SWKS_Rhino_compare_circle\primitives\Cylinder\unit_cyl_y2.0_blend.03.stp"
-            printVerbose("Generating source model: " + file_S)
-
-            if generativeSceneFlag:
-                generativeScene_S = (
-                    ViewScene()
-                )  # add shape comparison scene details by default
-                generativeScene_S.name = fileNameTimeStamp(
-                    os.path.split(file_S)[1][:-4], "iv", localCacheDir
-                )
-            else:
-                generativeScene_S = None
-
-            testModel_S = getModelFeatures2(
-                file_S,
-                shapeInsertionPoint,
-                shapeScale,
-                shapeRotation,
-                shapeRotationAxis,
-                generativeScene_S,
-            )
-            shape2pickle(testModel_S, localCacheDir)
-            if generativeScene_S:
-                generativeScene_S.addPoints(
-                    [
-                        Point(0.0, 0.0, 0.0),
-                    ],
-                    "red",
-                )  # show origin point
-                generativeScene_S.addText(
-                    (-15.0, -15.0, 0.0),
-                    "Source: " + os.path.split(testModel_S.filepath)[1],
-                )
-                generativeScene_S.saveIV(generativeScene_S.name)
-            playsound(880, 500)
-
-    printModelAlignment2(
-        shapeInsertionPoint, shapeScale, shapeRotation, shapeRotationAxis
-    )
-
-    # Create a second scaled, rotated, translated model that is a negative src (N)
-
-    if file_N:
-        # shapeCacheFilePath = os.path.join(localCacheDir, file_N) # full path provided
-        shapeCacheFilePath = file_N
-        testModel_N = findExistingShapeData(shapeCacheFilePath)
-        if testModel_N:
-            printVerbose("Negative model insertion: " + shapeCacheFilePath)
-            shapeInsertionPoint = testModel_N.insertionPoint
-            shapeScale = testModel_N.scale
-            shapeRotation = testModel_N.rotation
-            shapeRotationAxis = testModel_N.rotationAxis
-
-    if not testModel_N:
-        shapeInsertionPoint = Point(uniform(0, 10), uniform(0, 10), uniform(0, 10))
-        shapeScale = uniform(5, 15)
-        shapeRotation = uniform(0, 360)
-        shapeRotationAxis = [random(), random(), random()]
-
-        while not testModel_N:
-            remainingFiles = [os.path.split(sf)[1] for sf in shapeFiles]
-            Sfilename = os.path.split(testModel_S.filepath)[1]
-            if Sfilename in remainingFiles:
-                remainingFiles.remove(Sfilename)
-            file_N = remainingFiles[randint(0, len(remainingFiles) - 1)]
-            remainingFiles.remove(file_N)
-            shapeCacheFilePath = [s for s in shapeFiles if file_N in s][0]
-            if shapeCacheFilePath:
-                printVerbose("\n\nNegative model generation: " + shapeCacheFilePath)
-
-                if generativeSceneFlag:
-                    generativeScene_N = (
-                        ViewScene()
-                    )  # add shape comparison scene details by default
-                    generativeScene_N.name = fileNameTimeStamp(
-                        file_N[:-4], "iv", localCacheDir
-                    )
-                else:
-                    generativeScene_N = None
-
-                testModel_N = getModelFeatures2(
-                    shapeCacheFilePath,
-                    shapeInsertionPoint,
-                    shapeScale,
-                    shapeRotation,
-                    shapeRotationAxis,
-                    generativeScene_N,
-                )
-                shape2pickle(testModel_N, localCacheDir)
-                if generativeScene_N:
-                    generativeScene_N.addPoints(
-                        [
-                            Point(0.0, 0.0, 0.0),
-                        ],
-                        "red",
-                    )  # show origin point
-                    generativeScene_N.addText(
-                        (-15.0, -15.0, 0.0),
-                        "Negative: " + os.path.split(testModel_N.filepath)[1],
-                    )
-                    generativeScene_N.saveIV(generativeScene_N.name)
-                playsound(880, 500)
-
-    printModelAlignment2(
-        shapeInsertionPoint, shapeScale, shapeRotation, shapeRotationAxis
-    )
-
-    # printVerbose("Source model insertion: " + shapeCacheFilePath)
-
-    # Create a transformed version of the source model shape (P).
-    if file_P:
-        # shapeCacheFilePath = os.path.join(localCacheDir, file_P) # full path provided
-        shapeCacheFilePath = file_P
-        testModel_P = findExistingShapeData(shapeCacheFilePath)
-        if testModel_P:
-            printVerbose("Positive model insertion: " + shapeCacheFilePath)
-            shapeInsertionPoint = testModel_P.insertionPoint
-            shapeScale = testModel_P.scale
-            shapeRotation = testModel_P.rotation
-            shapeRotationAxis = testModel_P.rotationAxis
-
-    if not testModel_P:
-        shapeInsertionPoint = Point(uniform(0, 10), uniform(0, 10), uniform(0, 10))
-        shapeScale = uniform(5, 15)
-        shapeRotation = uniform(0, 360)
-        shapeRotationAxis = [random(), random(), random()]
-
-        printVerbose("\n\nPositive model generation: " + testModel_S.filepath)
-
-        if generativeSceneFlag:
-            generativeScene_P = (
-                ViewScene()
-            )  # add shape comparison scene details by default
-            generativeScene_P.name = fileNameTimeStamp(
-                testModel_S.name[:-4], "iv", localCacheDir
-            )
-        else:
-            generativeScene_P = None
-
-        testModel_P = getModelFeatures2(
-            testModel_S.filepath,
-            shapeInsertionPoint,
-            shapeScale,
-            shapeRotation,
-            shapeRotationAxis,
-            generativeScene_P,
-        )
-        if testModel_P is None:
-            print("Positive model generation error")
-            return None
-        shape2pickle(testModel_P, localCacheDir)
-        if generativeScene_P:
-            generativeScene_P.addPoints(
-                [
-                    Point(0.0, 0.0, 0.0),
-                ],
-                "red",
-            )  # show origin point
-            generativeScene_P.addText(
-                (-15.0, -15.0, 0.0),
-                "Positive: " + os.path.split(testModel_P.filepath)[1],
-            )
-            generativeScene_P.saveIV(generativeScene_P.name)
-        playsound(880, 500)
-
-    printModelAlignment2(
-        shapeInsertionPoint, shapeScale, shapeRotation, shapeRotationAxis
-    )
-
-    # create standalone MDI coin3D viewer for each comparison instance
-    if not viewerFlag:
-        SSPRscene = None
-    if viewerFlag:
-        SSPRscene = ViewScene()
-        SSPRscene.name = fileNameTimeStamp("SSPRcompare", "iv", localCacheDir)
-        SSPRscene.addShape(
-            testModel_S.objectHandle,
-            "testModel_S",
-            ambColor="green",
-            diffColor="",
-            specColor="",
-            emColor="",
-            transp=0.5,
-        )
-
-        if testModel_S.featureMaxPoints:
-            SSPRscene.addPoints(testModel_S.featureMaxPoints, "lime", "cross7")
-        if testModel_S.featureMinPoints:
-            SSPRscene.addPoints(testModel_S.featureMinPoints, "green", "cross7")
-        if testModel_S.featureMaxCentres:
-            SSPRscene.addPoints(testModel_S.featureMaxCentres, "yellow", "cross7")
-        if testModel_S.featureMinCentres:
-            SSPRscene.addPoints(testModel_S.featureMinCentres, "white", "cross7")
-        # SSPRscene.saveIV(SSPRscene.name)
-
-        SSPRscene.addShape(
-            testModel_N.objectHandle,
-            "testModel_N",
-            ambColor="red",
-            diffColor="",
-            specColor="",
-            emColor="",
-            transp=0.5,
-        )
-        if testModel_N.featureMaxPoints:
-            SSPRscene.addPoints(testModel_N.featureMaxPoints, "red", "diamond5")
-        if testModel_N.featureMinPoints:
-            SSPRscene.addPoints(testModel_N.featureMinPoints, "green", "diamond5")
-        if testModel_N.featureMaxCentres:
-            SSPRscene.addPoints(testModel_N.featureMaxCentres, "yellow", "diamond5")
-        if testModel_N.featureMinCentres:
-            SSPRscene.addPoints(testModel_N.featureMinCentres, "white", "diamond5")
-
-        SSPRscene.addShape(
-            testModel_P.objectHandle,
-            "testModel_P",
-            ambColor="green",
-            diffColor="",
-            specColor="",
-            emColor="",
-            transp=0.5,
-        )
-        if testModel_P.featureMaxPoints:
-            SSPRscene.addPoints(testModel_P.featureMaxPoints, "blue")
-        if testModel_P.featureMinPoints:
-            SSPRscene.addPoints(testModel_P.featureMinPoints, "green")
-        if testModel_P.featureMaxCentres:
-            SSPRscene.addPoints(testModel_P.featureMaxCentres, "yellow")
-        if testModel_P.featureMinCentres:
-            SSPRscene.addPoints(testModel_P.featureMinCentres, "white")
-        SSPRscene.saveIV(SSPRscene.name)
-
-    printVerbose(
-        "Corrolation distance measure histogram tests (1 is zero distance, 0 is infinite distance)\n"
-    )
-    # determine a sensitivity and specificity metric via comparison of true and false targets with source
-    SN_histogramRank = distanceRank2(testModel_S, testModel_N, methodName="Correlation")
-    printVerbose(
-        "\nNegative trial "
-        + testModel_S.name
-        + " & "
-        + testModel_N.name
-        + " histogram comparison output: {:.4f}".format(SN_histogramRank)
-        + "\n"
-    )
-
-    SN_RMSE = np.Infinity
-    if SN_histogramRank > 0.5:
-        SN_RMSE, SN_rotMat, SN_translation, SN_scale = predictionTest5(
-            testModel_S,
-            testModel_N,
-            numberOfPoints=20,
-            DistThreshold=1e-2,
-            scene=SSPRscene,
-        )  # -------------
-        if not SN_RMSE:
-            SN_RMSE = np.Infinity
-
-    printVerbose(
-        "Negative trial "
-        + testModel_S.name
-        + " & "
-        + testModel_N.name
-        + " Root Mean Square Error: {:.6f}".format(SN_RMSE)
-    )
-
-    SP_histogramRank = distanceRank2(testModel_S, testModel_P, methodName="Correlation")
-    printVerbose(
-        "\nPositive trial "
-        + testModel_S.name
-        + " & "
-        + testModel_P.name
-        + " histogram comparison output: {:.6f}".format(SP_histogramRank)
-        + "\n"
-    )
-
-    SP_RMSE = np.Infinity
-    if SP_histogramRank > 0.5:
-        SP_RMSE, SP_rotMat, SP_translation, SP_scale = predictionTest5(
-            testModel_S,
-            testModel_P,
-            numberOfPoints=20,
-            DistThreshold=1e-2,
-            scene=SSPRscene,
-        )
-        # publish testModel_N rotation matrix
-
-        if not SP_RMSE:
-            SP_RMSE = np.Infinity
-
-    printVerbose(
-        "\nPositive trial "
-        + testModel_S.name
-        + " & "
-        + testModel_P.name
-        + " Root Mean Square Error: {:.6f}".format(SP_RMSE)
-    )
-
-    GeomTestParams = {
-        "source name": testModel_S.name,
-        "source gen time": testModel_S.generationTime,
-        "source insertion point": testModel_S.insertionPoint,
-        "source scale": testModel_S.scale,
-        "source rotation": testModel_S.rotation,
-        "+ve target name": testModel_P.name,
-        "+ve target gen time": testModel_P.generationTime,
-        "+ve target insertion point": testModel_P.insertionPoint,
-        "+ve target scale": testModel_P.scale,
-        "+ve target rotation": testModel_P.rotation,
-        "+ve target RMSE src": SP_RMSE,
-        "-ve target name": testModel_N.name,
-        "-ve target gen time": testModel_N.generationTime,
-        "-ve target insertion point": testModel_N.insertionPoint,
-        "-ve target scale": testModel_N.scale,
-        "-ve target rotation": testModel_N.rotation,
-        "-ve target RMSE src": SN_RMSE,
-    }
-
-    return GeomTestParams, SSPRscene
-
-
-def SNPdata2CSV(SNPdata, GeomTestCSVFilePath):
-    """
-    Open CSV file at GeomTestCSVFilePath and add dict() structured SNP comparison data.
-
-    :param SNPdata:
-    :param GeomTestCSVFilePath:
-    :return:
-    """
-
-    GeomTestCSVheader = [
-        "source name",
-        "source gen time",
-        "source insertion point",
-        "source scale",
-        "source rotation",
-        "+ve target name",
-        "+ve target gen time",
-        "+ve target insertion point",
-        "+ve target scale",
-        "+ve target rotation",
-        "+ve target RMSE src",
-        "-ve target name",
-        "-ve target gen time",
-        "-ve target insertion point",
-        "-ve target scale",
-        "-ve target rotation",
-        "-ve target RMSE src",
-    ]
-
-    # initialise a CSV file to capture values
-    if len(glob.glob(GeomTestCSVFilePath)) < 1:  # check if .csv already exists
-        # print("Append data to existing Geometry test file [line:4230]")
-        # os.remove(GeomTestCSVFilePath)
-
-        # test file exists
-        try:
-            with open(
-                GeomTestCSVFilePath, "x", encoding="utf-8"
-            ) as GeomTestCSVFile:  # add the header row
-                Twriter = csv.DictWriter(
-                    GeomTestCSVFile, lineterminator="\n", fieldnames=GeomTestCSVheader
-                )
-                Twriter.writeheader()
-        except Exception as e:
-            print("CSV file init failure: " + GeomTestCSVFilePath)
-
-    try:
-        with open(GeomTestCSVFilePath, "a", encoding="utf-8") as GeomTestFile:
-            Twriter = csv.DictWriter(
-                GeomTestFile, lineterminator="\n", fieldnames=GeomTestCSVheader
-            )
-            Twriter.writerow(
-                {
-                    "source name": SNPdata["source name"],
-                    "source gen time": SNPdata["source gen time"],
-                    "source insertion point": SNPdata["source insertion point"],
-                    "source scale": SNPdata["source scale"],
-                    "source rotation": SNPdata["source rotation"],
-                    "+ve target name": SNPdata["+ve target name"],
-                    "+ve target gen time": SNPdata["+ve target gen time"],
-                    "+ve target insertion point": SNPdata["+ve target insertion point"],
-                    "+ve target scale": SNPdata["+ve target scale"],
-                    "+ve target rotation": SNPdata["+ve target rotation"],
-                    "+ve target RMSE src": SNPdata["+ve target RMSE src"],
-                    "-ve target name": SNPdata["-ve target name"],
-                    "-ve target gen time": SNPdata["-ve target gen time"],
-                    "-ve target insertion point": SNPdata["-ve target insertion point"],
-                    "-ve target scale": SNPdata["-ve target scale"],
-                    "-ve target rotation": SNPdata["-ve target rotation"],
-                    "-ve target RMSE src": SNPdata["-ve target RMSE src"],
-                }
-            )
-            print("CSV file update: " + GeomTestCSVFilePath)
-    except Exception as e:
-        print("CSV file open/write failure: " + GeomTestCSVFilePath)
-
-
-def multiShapePRtest(
-    GeomTestCSVFilePath, rankedTestFilePath, shapeCacheDir, debugSceneFlag=0
-):
-    """
-    Using previously saved CAD geometry models from singleShapePRtest(), conduct an exhaustive test between
-    all models, deriving the Root Mean Square Error value via predictionTest5() for models with histograms over
-    a 0.9 similarity threshold via distanceRank2().
-
-    Creating a new scene for viewing each iteration is too computationally intensive to be practicable except
-    during debug. When re-inserting test files into CAD space models for point tests, the original rotation/translation
-    is used, rather than the calculated rotation/translation derived from the feature search.
-
-    :param GeomTestCSVFilePath: file path for saving CSV formatted test results
-    :param rankedTestFilePath: test output file path
-    :param shapeCacheDir: directory to get pre-processed pickle-format shape object files.
-    :param debugSceneFlag: create individual scenes of shape comparison for debug purposes
-    :return: -
-    """
-
-    # Test comparing all previously generated shape files
-    # get the list of object histogram files
-    shapeFiles = []
-    for root, dirs, files in os.walk(shapeCacheDir):
-        for file in files:
-            if file.endswith(".obj"):
-                shapeFiles.append(os.path.join(root, file))
-
-    # sort list alphabetically
-    shapeFiles = sorted(shapeFiles, key=str.lower)
-
-    # create dict structure {sourceFilename0:{targetFilename0:RMSE, targetFilename1:RMSE ..} ..}
-    rankedTest = dict()
-    # targetDict = dict()
-    lastSourceName = ""
-
-    for sourceFile in shapeFiles:  # compare all targets
-        try:
-            print("\nsourceFile: " + str(sourceFile))
-            with open(sourceFile, "rb") as _f:
-                source = pickle.load(_f)
-                sourceName = os.path.split(sourceFile)[-1][:-4]
-                # sourceName = source.name[:-4]
-                if (sourceName == lastSourceName) or (
-                    source.surfaceStatus == "no surface returned"
-                ):
-                    source = None
-                else:
-                    lastSourceName = sourceName
-        except Exception as e:
-            source = None
-            print("Pickle file load failure from " + sourceFile)
-
-        if source:
-            source.importSTEPmodel()
-            source.featureClean()
-            # sourceName = os.path.split(sourceFile)[-1][:-4]
-            # sourceName = source.name[:-4]
-            rankedTest[sourceName] = {"FILES": sourceName}
-
-            for targetFile in shapeFiles:
-                targetName = os.path.split(targetFile)[-1][:-4]
-                if (targetName in rankedTest) and (
-                    sourceName in rankedTest[targetName]
-                ):
-                    rankedTest[sourceName][targetName] = "-"
-                    printVerbose("duplicate")
-                else:
-                    print("\ntargetFile: " + str(targetFile))
-
-                    try:
-                        with open(targetFile, "rb") as _f:
-                            target = pickle.load(_f)
-                    except Exception as e:
-                        target = None
-                        print("Pickle file load failure from " + targetFile)
-
-                    if target:
-                        target.importSTEPmodel()
-                        target.featureClean()
-                        # targetName = target.name[:-4]
-                        # targetName = os.path.split(targetFile)[-1][:-4]
-
-                        histogramRank = distanceRank2(
-                            source, target, methodName="Correlation"
-                        )
-                        printVerbose(
-                            source.name
-                            + " & "
-                            + target.name
-                            + " histogram comparison output: {:.6f}".format(
-                                histogramRank
-                            )
-                        )
-
-                        if not debugSceneFlag:
-                            debugScene = None
-                        if debugSceneFlag:
-                            debugScene = ViewScene()
-                            # debugScene.name = fileNameTimeStamp(
-                            #     "debugScene", "iv", shapeCacheDir
-                            # )
-                            debugScene.name = (
-                                shapeCacheDir
-                                + os.sep
-                                + "debugScene_"
-                                + str(random())[2:6]
-                                + ".iv"
-                            )
-
-                            debugScene.addShape(
-                                source.objectHandle,
-                                "source",
-                                ambColor="green",
-                                diffColor="",
-                                specColor="",
-                                emColor="",
-                                transp=0.5,
-                            )
-                            debugScene.addShape(
-                                target.objectHandle,
-                                "target",
-                                ambColor="red",
-                                diffColor="",
-                                specColor="",
-                                emColor="",
-                                transp=0.5,
-                            )
-
-                        RMSE = np.Infinity
-                        if histogramRank > 0.9:
-                            RMSE, rotMat, transScalar, scaleRatio = predictionTest5(
-                                target,
-                                source,
-                                numberOfPoints=20,
-                                DistThreshold=1e-2,
-                                scene=debugScene,
-                            )
-                            if RMSE:
-                                printVerbose(
-                                    source.name
-                                    + " & "
-                                    + target.name
-                                    + " Root Mean Square Error: {:.6f}".format(RMSE)
-                                )
-                            else:
-                                RMSE = np.Infinity
-
-                        if debugSceneFlag:
-                            debugScene.saveIV(debugScene.name)
-
-                        rankedTest[sourceName][targetName] = RMSE
-                        # if targetName + ".0" not in rankedTest[sourceName].keys():
-                        #     rankedTest[sourceName][targetName + ".0"] = RMSE
-                        # else:
-                        #     targetNameList = rankedTest[sourceName].keys()
-                        #     targetNameList = [
-                        #         tnl for tnl in targetNameList if tnl[:-2] == targetName
-                        #     ]
-                        #     rankedTest[sourceName][
-                        #         targetName + "." + str(len(targetNameList))
-                        #     ] = RMSE
-
-    shapeSortedFilenames = sorted(rankedTest.keys(), key=str.lower)
-
-    # initialise a CSV file to capture values
-
-    try:
-        # check to see if GeomTestCSVFilePath already exists
-        if os.path.exists(GeomTestCSVFilePath):
-            os.remove(GeomTestCSVFilePath)
-        with open(GeomTestCSVFilePath, "x", encoding="utf-8") as GeomTestCSVFile:
-            Twriter = csv.DictWriter(
-                GeomTestCSVFile,
-                lineterminator="\n",
-                fieldnames=[" "] + shapeSortedFilenames,
-            )
-            Twriter.writeheader()
-    except Exception as e:
-        print("CSV file init failure: " + GeomTestCSVFilePath)
-
-    try:
-        with open(GeomTestCSVFilePath, "a", encoding="utf-8") as GeomTestFile:
-            Twriter = csv.DictWriter(
-                GeomTestFile,
-                lineterminator="\n",
-                fieldnames=["FILES"] + shapeSortedFilenames,
-            )
-            for ssf in shapeSortedFilenames:
-                Twriter.writerow(rankedTest[ssf])
-
-            print("CSV file update: " + GeomTestCSVFilePath)
-    except Exception as e:
-        print("CSV file open/write failure: " + GeomTestCSVFilePath)
-
-    if os.path.exists(rankedTestFilePath):
-        os.remove(rankedTestFilePath)
-    try:
-        with open(rankedTestFilePath, "wb") as _f:
-            pickle.dump(rankedTest, _f)
-    except Exception as e:
-        print("Pickle file dump failure to " + rankedTestFilePath)
-
-
-def interactiveScript():
-    """
-    Overall script for,
-    1. converting STEP models to feature point representation
-    2. testing random rotated, scaled, translated CAD models for similarity
-    3. cross-testing previously generated feature point represented models
-    Was used for PhD data generation
-    """
-
-    # Repository version copies folders over
-    # This script version merely prompts for pathnames and assumes populated working directories and shape repository
-
-    # BaseDir = os.path.normpath(r'C:\Users\JaneDoe\Desktop\GeometrySimilarityTest')
-    # primitivesDir = os.path.normpath(r'C:\Users\JaneDoe\Desktop\GeometrySimilarityTest\primitives')
-    # localCacheDir = os.path.normpath(r'C:\Users\JaneDoe\Desktop\GeometrySimilarityTest\ShapeCache')
-
-    # BaseDir = input('Specify local directory where test output data is saved: ')
-
-    # local machine
-    if platform.system() == "Windows":
-        BaseDir = os.path.normpath(r"E:\PY_DELL2\SWKS_Rhino_compare_circle")
-        primitivesDir = BaseDir + os.sep + r"primitives"
-        localCacheDir = BaseDir + os.sep + r"ShapeCache"
-
-    elif platform.system() == "Linux":
-        BaseDir = os.path.normpath(
-            r"/home/foobert/PycharmProjects/GeometrySimilarityPub"
-        )
-        primitivesDir = os.path.normpath(
-            r"/media/foobert/Dell2HDD/PY_DELL2/SWKS_Rhino_compare_circle/primitives"
-        )
-        localCacheDir = BaseDir + os.sep + r"ShapeCache"
-
-    for checkDir in [BaseDir, primitivesDir, localCacheDir]:
-        if os.path.exists(checkDir):
-            print(checkDir + " directory found")
-        else:
-            print(checkDir + " directory does NOT exist")
-
-    # Tammes Sphere and Deserno Sphere are two variants of equidistant point distribution on a unit sphere.
-    # load from pickle files if already generated and available
-    # TammesSphereFilePath = os.path.join(BaseDir, "TammesSphereCache.obj")
-    # if os.path.exists(TammesSphereFilePath):  # check to see if TammesSphereCache.obj exists
-    #     with open(TammesSphereFilePath, "rb") as f:
-    #         TammesSphereCache = pickle.load(f)
-
-    DesernoSphereFilePath = os.path.join(BaseDir, "DesernoSphereCache.obj")
-    if os.path.exists(
-        DesernoSphereFilePath
-    ):  # check to see if TammesSphereCache.obj exists
-        with open(DesernoSphereFilePath, "rb") as f:
-            DesernoSphereCache = pickle.load(f)
-
-    # Precision & recall of models taken from National Design Repository (primitive model classification). Bespalov et al.
-    # STEP model test files are contained within 'primitives' subdirectory
-
-    # ShapeCache subdirectory contains pre-processed geometric model objects with feature points from
-    # GeometrySimilarityTestA(), to be re-used in GeometrySimilarityTestB()
-
-    F_GUI.setupWithoutGUI()
-
-    # create & view scene of source, positive & negative test models together.
-    # single instance per run of singleShapePRtest()
-    viewerFlag = 1
-    # create & save individual scenes that includes higher detail of model feature detection
-    generativeSceneFlag = 1
-
-    # testShape_Source = r'unit_cyl_y2.0_blend.03_2_25_17_26.obj'
-    # testShape_Negative = r'unit_cube_xz1.5_blend.01_2_25_17_54.obj'
-    # testShape_Positive = r'unit_cyl_y2.0_blend.03_2_25_18_39.obj'
-
-    # testShape_Source = os.path.join(localCacheDir, testShape_Source)
-    # testShape_Negative = os.path.join(localCacheDir, testShape_Negative)
-    # testShape_Positive = os.path.join(localCacheDir, testShape_Positive)
-
-    # testShape_Source = None
-    # testShape_Negative = None
-    # testShape_Positive = None
-    #
-    # SNPtest, SNPscene = singleShapePRtest(
-    #     localCacheDir,
-    #     primitivesDir,
-    #     testShape_Source,
-    #     testShape_Negative,
-    #     testShape_Positive,
-    # )
-
-    doSingleTest = input(
-        "Test for single positive and negative src among sampled CAD models? [y / ^y]"
-    )
-    while doSingleTest.lower() in ["y", "yes"]:
-        SNPtest, SNPscene = singleShapePRtest(localCacheDir, primitivesDir)
-        SNPdata2CSV(SNPtest, os.path.join(BaseDir, r"PRshapeSimilarity_feb23.csv"))
-        doSingleTest = input(
-            "Test again for single positive and negative src among sampled CAD models? [y / ^y]"
-        )
-
-    doMultiTest = input(
-        "Test for similarity matches among multiple processed feature representations? [y / ^y]"
-    )
-    if doMultiTest.lower() in ["y", "yes"]:
-        # with sufficient test model histograms from shapePRtest3models(), run overall comparison
-        # fileNameTimeStamp("MultiShapeSimilarity", "csv", localCacheDir)
-        # fileNameTimeStamp("rankedTest_A", "obj", primitivesDir)
-        multiShapePRtest(
-            os.path.join(BaseDir, r"MultiShapeSimilarity_feb23.csv"),
-            os.path.join(localCacheDir, r"MultiShapeSimilarity_feb23.obj"),
-            localCacheDir,
-            debugSceneFlag=0,
-        )
-
-    # update TammesSphereCache before exit
-    # if TammesSphereCache:
-    #     if len(glob.glob(TammesSphereFilePath)) == 1:
-    #         os.remove(TammesSphereFilePath)
-    #     with open(TammesSphereFilePath, "wb") as _f:
-    #         pickle.dump(TammesSphereCache, _f)
-    #     printVerbose("  Tammes Sphere Cache written to " + TammesSphereFilePath)
-
-    # update DesernoSphereCache before exit
-    if DesernoSphereCache:
-        if len(glob.glob(DesernoSphereFilePath)) == 1:
-            os.remove(DesernoSphereFilePath)
-        with open(DesernoSphereFilePath, "wb") as _f:
-            pickle.dump(DesernoSphereCache, _f)
-        printVerbose("  Deserno Sphere Cache written to " + DesernoSphereFilePath)
-
-    sys.exit(0)
-
-
-def checkDirPath(dirPath):
-    if os.path.isdir(dirPath) and os.access(dirPath, os.R_OK):
-        return dirPath
-    else:
-        raise Exception("{0} is not a readable dir".format(dirPath))
-
-
-def checkFilePath(filePath):
-    if os.path.isfile(filePath) and os.access(filePath, os.R_OK):
-        return filePath
-    else:
-        raise Exception("{0} is not a readable filepath".format(filePath))
+def main(argv=None):
+    from shapematch_workflows import main as cli_main
+    return cli_main(argv)
 
 
 if __name__ == "__main__":
-    # CLItest.py v1
-
-    CLIparser = argparse.ArgumentParser(prog="src", formatter_class=argparse.RawTextHelpFormatter)
-
-    CLIsubparsers_help = (
-        "singlePRtest is a precision-recall tests performed between similar and dissimilar STEP models "
-        + "converted to feature point representation"
-        + "\nmultiPRtest is a set of precision-recall performed over all existing feature point model "
-        + "representations"
-    )
-
-    CLIsubparsers = CLIparser.add_subparsers(
-        dest="command", title="Test options", help=CLIsubparsers_help
-    )
-
-    singlePR_CLIparserHelp = (
-        "Feature point model and shape similarity calculation for STEP input files"
-        + "Model file pathnames may be individually entered (source_filename, positive_filename, negative_filename)"
-        + "or may be selected at random from a directory of STEP format models (input_directory_path)"
-    )
-
-    singlePR_CLIparser = CLIsubparsers.add_parser(
-        "singlePRtest",
-        usage="convert STEP shape files to feature point representation and perform similarity test",
-        description=singlePR_CLIparserHelp,
-        fromfile_prefix_chars="@",
-    )
-
-    singlePR_CLIparser.add_argument(
-        "-I",
-        "--input_dir_path",
-        type=checkDirPath,
-        # default='/tmp/non_existent_dir',
-        nargs="?",
-        help="STEP test file directory pathname (random selection)",
-    )
-
-    singlePR_CLIparser.add_argument(
-        "-O",
-        "--output_dir_path",
-        type=checkDirPath,
-        nargs="?",
-        help="output directory pathname",
-    )
-
-    singlePR_CLIparser.add_argument(
-        "-of", "--csv_file", nargs="?", help="output file directory pathname"
-    )
-
-    singlePR_CLIparser.add_argument(
-        "-sf",
-        "--source_file",
-        type=checkFilePath,
-        nargs="?",
-        help="source single STEP file pathname (dual model selection)",
-    )
-
-    singlePR_CLIparser.add_argument(
-        "-nf",
-        "--negative_file",
-        type=checkFilePath,
-        nargs="?",
-        help="negative single STEP file pathname (dual model selection)",
-    )
-
-    singlePR_CLIparser.add_argument(
-        "-pf",
-        "--positive_file",
-        type=checkFilePath,
-        nargs="?",
-        help="optional positive single STEP file pathname (dual model selection)",
-    )
-
-    singlePR_CLIparser.add_argument(
-        "-s",
-        "--scenegraph",
-        help="output scenegraph file showing source, positive, negative shapes ",
-        action="store_true",
-    )  # on/off flag
-
-    singlePR_CLIparser.add_argument(
-        "-s2",
-        "--model_scene",
-        help="output scenegraph file showing individual shapes and feature points",
-        action="store_true",
-    )  # on/off flag
-
-    singlePR_CLIparser.add_argument(
-        "-v", "--verbose", action="store_true"
-    )  # on/off flag
-
-    # singlePR_CLIparser.add_argument('--version', action='version', version='%(prog)s 0.x')
-
-    multiPR_CLIparserHelp = (
-        "Multiple shape discrimination using precalculated feature point shape representation"
-        + " selected from a directory of feature point format models (input_directory_path)"
-    )
-
-    multiPR_CLIparser = CLIsubparsers.add_parser(
-        "multiPRtest",
-        usage="test multiple feature point representation files for similarity",
-        description=multiPR_CLIparserHelp,
-        fromfile_prefix_chars="@",
-    )
-
-    multiPR_CLIparser.add_argument(
-        "-I",
-        "--input_dir_path",
-        type=checkDirPath,
-        # default='/tmp/non_existent_dir',
-        nargs="?",
-        help="shape object file directory pathname",
-    )
-
-    multiPR_CLIparser.add_argument(
-        "-O",
-        "--output_dir_path",
-        type=checkDirPath,
-        nargs="?",
-        help="output directory pathname",
-    )
-
-    multiPR_CLIparser.add_argument(
-        "-of",
-        "--csv_file",
-        nargs="?",
-        help="CSV output file directory pathname",
-    )
-
-    multiPR_CLIparser.add_argument(
-        "-obf",
-        "--obj_file",
-        nargs="?",
-        help="python object output file directory pathname",
-    )
-
-    multiPR_CLIparser.add_argument(
-        "-v", "--verbose", action="store_true"
-    )  # on/off flag
-
-    multiPR_CLIparser.add_argument(
-        "-s",
-        "--debug_scenegraph",
-        help="output debug scenegraph file showing source, positive, negative shapes and transform points",
-        action="store_true",
-    )  # on/off flag
-
-    # multiPR_CLIparser.add_argument('--version', action='version', version='%(prog)s 0.2')
-
-    CLIargs = CLIparser.parse_args()
-
-    if CLIargs.command == "singlePRtest":
-        isVerbose = CLIargs.verbose
-        # create & view scene of source, positive & negative test models together.
-        # single instance per run of singleShapePRtest()
-        viewerFlag = CLIargs.scenegraph
-        # create & save individual scenes that includes higher detail of model feature detection
-        generativeSceneFlag = CLIargs.model_scene
-
-        if viewerFlag or generativeSceneFlag:
-            F_GUI.setupWithoutGUI()
-
-        # ShapeCache subdirectory contains pre-processed geometric model objects with feature points from
-        # singleShapePRtest(), to be re-used in shapePRtestNmodels()
-        if CLIargs.output_directory_path:
-            localCacheDir = CLIargs.output_directory_path
-        else:
-            localCacheDir = os.getcwd() + ".." + os.sep +  + r"data" + os.sep + r"shapeCache"
-            os.makedirs(localCacheDir, exist_ok=True)
-
-        testShape_Source = CLIargs.source_filename
-        testShape_Negative = CLIargs.negative_filename
-        testShape_Positive = CLIargs.positive_filename
-
-        if (
-            testShape_Positive is None
-            and testShape_Negative is None
-            and testShape_Source is not None
-        ):
-            testShape_Source = testShape_Positive
-            testShape_Positive = None
-
-        nonRandomTest = True
-        if (testShape_Source is None and testShape_Negative is None) or (
-            testShape_Source is None
-            and testShape_Negative is None
-            and testShape_Positive is None
-        ):
-            nonRandomTest = False
-
-        # Precision & recall of models taken from National Design Repository (primitive models). Bespalov et al.
-        # STEP model test files are contained within 'primitives' subdirectory
-        if CLIargs.input_directory_path:
-            primitiveShapeDir = CLIargs.input_directory_path
-            if not os.path.isdir(primitiveShapeDir):
-                guessPrimitiveShapeDir = os.getcwd() + ".." + os.sep + r"data"  + os.sep + r"primitives"
-                if not os.path.isdir(guessPrimitiveShapeDir):
-                    if not nonRandomTest:
-                        print("No input files identified")
-                        sys.exit(1)
-                else:
-                    primitiveShapeDir = guessPrimitiveShapeDir
-
-        if CLIargs.csv_filename:
-            if not CLIargs.csv_filename[-4:] == ".csv":
-                CLIargs.csv_filename = CLIargs.csv_filename + ".csv"
-            if not os.path.isdir(CLIargs.csv_filename):
-                CSVoutput = os.path.join(localCacheDir, CLIargs.csv_filename)
-        else:
-            CSVoutput = os.path.join(localCacheDir, r"PRshapeSimilarity.csv")
-
-        SNPtest, SNPscene = singleShapePRtest(
-            localCacheDir,
-            primitiveShapeDir,
-            testShape_Source,
-            testShape_Negative,
-            testShape_Positive,
-        )
-        SNPdata2CSV(SNPtest, CSVoutput)
-
-    if CLIargs.command == "multiPRtest":
-        isVerbose = CLIargs.verbose
-        # create & view scene of source, positive & negative test models together.
-        # multi instance per run of multiShapePRtest()
-        debugSceneFlag = CLIargs.debug_scenegraph
-
-        if debugSceneFlag:
-            F_GUI.setupWithoutGUI()
-
-        # ShapeCache subdirectory contains pre-processed geometric model objects with feature points from
-        # multiShapePRtest(), to be re-used in shapePRtestNmodels()
-        if CLIargs.input_directory_path:
-            localCacheDir = CLIargs.input_directory_path
-            if not os.path.isdir(localCacheDir):
-                guessLocalCacheDir = os.getcwd() + ".." + os.sep +  + r"data" + os.sep + r"shapeCache"
-                if os.path.isdir(guessLocalCacheDir):
-                    localCacheDir = guessLocalCacheDir
-                else:
-                    print("No input files identified")
-                    sys.exit(1)
-
-        if CLIargs.output_directory_path:
-            localOutputDir = CLIargs.output_directory_path
-        else:
-            localOutputDir = os.getcwd()
-
-        if CLIargs.csv_filename:
-            if not CLIargs.csv_filename[-4:] == ".csv":
-                CLIargs.csv_filename = CLIargs.csv_filename + ".csv"
-            if not os.path.isdir(CLIargs.csv_filename):
-                CSVoutput = os.path.join(localOutputDir, CLIargs.csv_filename)
-        else:
-            CSVoutput = fileNameTimeStamp(
-                "multiShapeTest", MSidentifier="csv", fDir=localOutputDir
-            )
-
-        if CLIargs.obj_filename:
-            if not CLIargs.obj_filename[-4:] == ".obj":
-                CLIargs.obj_filename = CLIargs.obj_filename + ".obj"
-            if not os.path.isdir(CLIargs.obj_filename):
-                objOutput = os.path.join(localOutputDir, CLIargs.obj_filename)
-        else:
-            objOutput = fileNameTimeStamp(
-                "multiShapeTest", MSidentifier="obj", fDir=localOutputDir
-            )
-
-        multiShapePRtest(
-            CSVoutput,
-            objOutput,
-            localCacheDir,
-            debugSceneFlag,
-        )
-
-# TODO: PEP8 lowercase_variable rename
-
-# TODO: automated determination of the various fudge factors ? using decision trees, e.g ?
-# from sklearn.neighbors import KDTree
-# tree = KDTree(np.array(xyz), leaf_size=2)
-
-# TODO: more robust handling of scaling related parameters
-
-# TODO: substitute ridge crawling for search timing out
-#  e.g. using getRadialEdges()
+    raise SystemExit(main())

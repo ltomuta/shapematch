@@ -1,0 +1,878 @@
+{
+  "backend": "freecad",
+  "records": [
+    {
+      "fixture": "cube/unit_cube.stp",
+      "seed": 0,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 23,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.732836739767859,
+      "intersections": [
+        [
+          [
+            3.0256099087434674,
+            3.317939071710475,
+            4.276914675360736
+          ]
+        ],
+        [
+          [
+            1.6303116632676375,
+            3.9242208418309064,
+            4.120148709438018
+          ]
+        ],
+        [
+          [
+            2.200867880953472,
+            3.3013018214302075,
+            5.004339404767359
+          ]
+        ]
+      ],
+      "status": "timeout",
+      "error": "Exceeded 90 seconds"
+    },
+    {
+      "fixture": "cube/unit_cube.stp",
+      "seed": 1,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 24,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.7763009017938565,
+      "intersections": [
+        [
+          [
+            3.0299229458095813,
+            3.3192761132009703,
+            4.278079195368586
+          ]
+        ],
+        [
+          [
+            1.6305535261994972,
+            3.923616184501257,
+            4.120070103985164
+          ]
+        ],
+        [
+          [
+            2.2010424755088427,
+            3.3015637132632634,
+            5.005212377544213
+          ]
+        ]
+      ],
+      "status": "timeout",
+      "error": "Exceeded 90 seconds"
+    },
+    {
+      "fixture": "cube/unit_cube.stp",
+      "seed": 2,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 25,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.818658333867607,
+      "intersections": [
+        [
+          [
+            3.0345322990902615,
+            3.320705012717981,
+            4.27932372075437
+          ]
+        ],
+        [
+          [
+            1.6307121746982345,
+            3.923219563254414,
+            4.120018543223074
+          ]
+        ],
+        [
+          [
+            2.2012285069286284,
+            3.301842760392942,
+            5.006142534643142
+          ]
+        ]
+      ],
+      "status": "timeout",
+      "error": "Exceeded 90 seconds"
+    },
+    {
+      "fixture": "sphere/unit_sphere.stp",
+      "seed": 0,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 23,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.732836739767859,
+      "intersections": [
+        [
+          [
+            2.9248956660924215,
+            3.286717656488651,
+            4.249721829844954
+          ]
+        ],
+        [
+          [
+            1.6312855059643179,
+            3.9217862350892054,
+            4.119832210561596
+          ]
+        ],
+        [
+          [
+            2.1881441736767195,
+            3.282216260515079,
+            4.940720868383598
+          ]
+        ]
+      ],
+      "status": "timeout",
+      "error": "Exceeded 90 seconds"
+    },
+    {
+      "fixture": "sphere/unit_sphere.stp",
+      "seed": 1,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 24,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.7763009017938565,
+      "intersections": [
+        [
+          [
+            2.9248956660924224,
+            3.286717656488651,
+            4.249721829844954
+          ]
+        ],
+        [
+          [
+            1.6312855059643179,
+            3.921786235089206,
+            4.119832210561596
+          ]
+        ],
+        [
+          [
+            2.1881441736767195,
+            3.282216260515079,
+            4.940720868383598
+          ]
+        ]
+      ],
+      "status": "timeout",
+      "error": "Exceeded 90 seconds"
+    },
+    {
+      "fixture": "sphere/unit_sphere.stp",
+      "seed": 2,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 25,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.818658333867607,
+      "intersections": [
+        [
+          [
+            2.9248956660924232,
+            3.2867176564886513,
+            4.249721829844954
+          ]
+        ],
+        [
+          [
+            1.6312855059643177,
+            3.921786235089206,
+            4.119832210561596
+          ]
+        ],
+        [
+          [
+            2.1881441736767195,
+            3.282216260515079,
+            4.940720868383597
+          ]
+        ]
+      ],
+      "status": "timeout",
+      "error": "Exceeded 90 seconds"
+    },
+    {
+      "fixture": "cylinder/unit_cyl.stp",
+      "seed": 0,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 23,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.732836739767859,
+      "intersections": [
+        [
+          [
+            3.025191302513611,
+            3.3178093037792196,
+            4.276801651678674
+          ]
+        ],
+        [
+          [
+            1.631099948480409,
+            3.9222501287989777,
+            4.119892516743867
+          ]
+        ],
+        [
+          [
+            2.200867880953472,
+            3.3013018214302075,
+            5.004339404767359
+          ]
+        ]
+      ],
+      "status": "error",
+      "error": "Traceback (most recent call last):\n  File \"/home/ltomuta/Work/shapematch/tools/reference.py\", line 80, in worker\n    source = module.getModelFeatures2(path, origin, 2, 23 + seed, [1, 2, 3])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 5012, in getModelFeatures2\n    searchFeatures(\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 3205, in searchFeatures\n    featureObject, featureIdentity, circleCentre = getMaxMin(\n                                                   ^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2363, in getMaxMin\n    rotSymFeature, circleCentrePoint, ridgePoint, edgeState = rotSymTest6(\n                                                              ^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2056, in rotSymTest6\n    centreCircle, radiusCircle = circleFit(allEdgePoints)\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2591, in circleFit\n    x = np.asfarray(p)\n        ^^^^^^^^^^^\n  File \"/tmp/shapematch-venv/lib/python3.12/site-packages/numpy/__init__.py\", line 763, in __getattr__\n    raise AttributeError(\nAttributeError: `np.asfarray` was removed in the NumPy 2.0 release. Use `np.asarray` with a proper dtype instead.\n",
+      "log_tail": "FreeCAD located in /usr/lib/freecad/bin\n"
+    },
+    {
+      "fixture": "cylinder/unit_cyl.stp",
+      "seed": 1,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 24,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.7763009017938565,
+      "intersections": [
+        [
+          [
+            3.0297752230787114,
+            3.319230319154401,
+            4.278039310231252
+          ]
+        ],
+        [
+          [
+            1.6310340969084538,
+            3.9224147577288653,
+            4.119913918504753
+          ]
+        ],
+        [
+          [
+            2.2010424755088427,
+            3.3015637132632634,
+            5.005212377544213
+          ]
+        ]
+      ],
+      "status": "error",
+      "error": "Traceback (most recent call last):\n  File \"/home/ltomuta/Work/shapematch/tools/reference.py\", line 80, in worker\n    source = module.getModelFeatures2(path, origin, 2, 23 + seed, [1, 2, 3])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 5012, in getModelFeatures2\n    searchFeatures(\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 3205, in searchFeatures\n    featureObject, featureIdentity, circleCentre = getMaxMin(\n                                                   ^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2363, in getMaxMin\n    rotSymFeature, circleCentrePoint, ridgePoint, edgeState = rotSymTest6(\n                                                              ^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2056, in rotSymTest6\n    centreCircle, radiusCircle = circleFit(allEdgePoints)\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2591, in circleFit\n    x = np.asfarray(p)\n        ^^^^^^^^^^^\n  File \"/tmp/shapematch-venv/lib/python3.12/site-packages/numpy/__init__.py\", line 763, in __getattr__\n    raise AttributeError(\nAttributeError: `np.asfarray` was removed in the NumPy 2.0 release. Use `np.asarray` with a proper dtype instead.\n",
+      "log_tail": "FreeCAD located in /usr/lib/freecad/bin\n"
+    },
+    {
+      "fixture": "cylinder/unit_cyl.stp",
+      "seed": 2,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 25,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.818658333867607,
+      "intersections": [
+        [
+          [
+            3.0345177420148666,
+            3.320700500024609,
+            4.279319790344013
+          ]
+        ],
+        [
+          [
+            1.6309602651155524,
+            3.9225993372111194,
+            4.119937913837445
+          ]
+        ],
+        [
+          [
+            2.2012285069286284,
+            3.301842760392942,
+            5.006142534643142
+          ]
+        ]
+      ],
+      "status": "error",
+      "error": "Traceback (most recent call last):\n  File \"/home/ltomuta/Work/shapematch/tools/reference.py\", line 80, in worker\n    source = module.getModelFeatures2(path, origin, 2, 23 + seed, [1, 2, 3])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 5012, in getModelFeatures2\n    searchFeatures(\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 3205, in searchFeatures\n    featureObject, featureIdentity, circleCentre = getMaxMin(\n                                                   ^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2363, in getMaxMin\n    rotSymFeature, circleCentrePoint, ridgePoint, edgeState = rotSymTest6(\n                                                              ^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2056, in rotSymTest6\n    centreCircle, radiusCircle = circleFit(allEdgePoints)\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2591, in circleFit\n    x = np.asfarray(p)\n        ^^^^^^^^^^^\n  File \"/tmp/shapematch-venv/lib/python3.12/site-packages/numpy/__init__.py\", line 763, in __getattr__\n    raise AttributeError(\nAttributeError: `np.asfarray` was removed in the NumPy 2.0 release. Use `np.asarray` with a proper dtype instead.\n",
+      "log_tail": "FreeCAD located in /usr/lib/freecad/bin\n"
+    },
+    {
+      "fixture": "torus/unit_torus.stp",
+      "seed": 0,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 23,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 11.687380973148993,
+      "intersections": [
+        [
+          [
+            3.2011939299586496,
+            3.3723701182871815,
+            4.324322361088835
+          ],
+          [
+            4.136454335527631,
+            3.662300844013566,
+            4.576842670592459
+          ]
+        ],
+        [
+          [
+            0.8949698636436036,
+            5.762575340890991,
+            4.359134794315828
+          ],
+          [
+            1.630914016806121,
+            3.922714957984698,
+            4.119952944538011
+          ]
+        ],
+        []
+      ],
+      "status": "error",
+      "error": "Traceback (most recent call last):\n  File \"/home/ltomuta/Work/shapematch/tools/reference.py\", line 80, in worker\n    source = module.getModelFeatures2(path, origin, 2, 23 + seed, [1, 2, 3])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 5012, in getModelFeatures2\n    searchFeatures(\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 3205, in searchFeatures\n    featureObject, featureIdentity, circleCentre = getMaxMin(\n                                                   ^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2363, in getMaxMin\n    rotSymFeature, circleCentrePoint, ridgePoint, edgeState = rotSymTest6(\n                                                              ^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2056, in rotSymTest6\n    centreCircle, radiusCircle = circleFit(allEdgePoints)\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2591, in circleFit\n    x = np.asfarray(p)\n        ^^^^^^^^^^^\n  File \"/tmp/shapematch-venv/lib/python3.12/site-packages/numpy/__init__.py\", line 763, in __getattr__\n    raise AttributeError(\nAttributeError: `np.asfarray` was removed in the NumPy 2.0 release. Use `np.asarray` with a proper dtype instead.\n",
+      "log_tail": "FreeCAD located in /usr/lib/freecad/bin\n"
+    },
+    {
+      "fixture": "torus/unit_torus.stp",
+      "seed": 1,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 24,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 11.786658020927103,
+      "intersections": [
+        [
+          [
+            3.2210102353393575,
+            3.3785131729552007,
+            4.329672763541626
+          ],
+          [
+            4.101780890277615,
+            3.6515520759860607,
+            4.567480840374955
+          ]
+        ],
+        [
+          [
+            0.8953649743364038,
+            5.761587564158991,
+            4.3590063833406685
+          ],
+          [
+            1.6307820005155493,
+            3.9230449987111267,
+            4.1199958498324465
+          ]
+        ],
+        []
+      ],
+      "status": "error",
+      "error": "Traceback (most recent call last):\n  File \"/home/ltomuta/Work/shapematch/tools/reference.py\", line 80, in worker\n    source = module.getModelFeatures2(path, origin, 2, 23 + seed, [1, 2, 3])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 5012, in getModelFeatures2\n    searchFeatures(\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 3205, in searchFeatures\n    featureObject, featureIdentity, circleCentre = getMaxMin(\n                                                   ^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2363, in getMaxMin\n    rotSymFeature, circleCentrePoint, ridgePoint, edgeState = rotSymTest6(\n                                                              ^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2056, in rotSymTest6\n    centreCircle, radiusCircle = circleFit(allEdgePoints)\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2591, in circleFit\n    x = np.asfarray(p)\n        ^^^^^^^^^^^\n  File \"/tmp/shapematch-venv/lib/python3.12/site-packages/numpy/__init__.py\", line 763, in __getattr__\n    raise AttributeError(\nAttributeError: `np.asfarray` was removed in the NumPy 2.0 release. Use `np.asarray` with a proper dtype instead.\n",
+      "log_tail": "FreeCAD located in /usr/lib/freecad/bin\n"
+    },
+    {
+      "fixture": "torus/unit_torus.stp",
+      "seed": 2,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 25,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 11.883173704931181,
+      "intersections": [
+        [
+          [
+            3.2430605454781425,
+            3.3853487690982242,
+            4.3356263472790975
+          ],
+          [
+            4.064497975424446,
+            3.6399943723815786,
+            4.5574144533646
+          ]
+        ],
+        [
+          [
+            0.8958079675528516,
+            5.760480081117871,
+            4.358862410545323
+          ],
+          [
+            1.6306338731388295,
+            3.9234153171529265,
+            4.12004399122988
+          ]
+        ],
+        []
+      ],
+      "status": "error",
+      "error": "Traceback (most recent call last):\n  File \"/home/ltomuta/Work/shapematch/tools/reference.py\", line 80, in worker\n    source = module.getModelFeatures2(path, origin, 2, 23 + seed, [1, 2, 3])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 5012, in getModelFeatures2\n    searchFeatures(\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 3205, in searchFeatures\n    featureObject, featureIdentity, circleCentre = getMaxMin(\n                                                   ^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2363, in getMaxMin\n    rotSymFeature, circleCentrePoint, ridgePoint, edgeState = rotSymTest6(\n                                                              ^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2056, in rotSymTest6\n    centreCircle, radiusCircle = circleFit(allEdgePoints)\n                                 ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ltomuta/Work/shapematch/legacy/shapematch.py\", line 2591, in circleFit\n    x = np.asfarray(p)\n        ^^^^^^^^^^^\n  File \"/tmp/shapematch-venv/lib/python3.12/site-packages/numpy/__init__.py\", line 763, in __getattr__\n    raise AttributeError(\nAttributeError: `np.asfarray` was removed in the NumPy 2.0 release. Use `np.asarray` with a proper dtype instead.\n",
+      "log_tail": "FreeCAD located in /usr/lib/freecad/bin\n"
+    },
+    {
+      "fixture": "miscellanea/tetrahedron.scaled.stp",
+      "seed": 0,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 23,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 33.17451357270091,
+      "intersections": [
+        [
+          [
+            5.385440019788065,
+            4.049486406134301,
+            4.914068805342776
+          ]
+        ],
+        [
+          [
+            -0.3480565748904998,
+            8.87014143722625,
+            4.763118386839412
+          ]
+        ],
+        [
+          [
+            3.133529116621127,
+            4.700293674931688,
+            9.66764558310563
+          ]
+        ]
+      ],
+      "status": "timeout",
+      "error": "Exceeded 90 seconds"
+    },
+    {
+      "fixture": "miscellanea/tetrahedron.scaled.stp",
+      "seed": 1,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 24,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 33.389644295368484,
+      "intersections": [
+        [
+          [
+            5.405653109140761,
+            4.055752463833636,
+            4.919526339468004
+          ]
+        ],
+        [
+          [
+            -0.40953487928823185,
+            9.02383719822058,
+            4.783098835768675
+          ]
+        ],
+        [
+          [
+            3.1377166340401725,
+            4.706574951060256,
+            9.688583170200857
+          ]
+        ]
+      ],
+      "status": "timeout",
+      "error": "Exceeded 90 seconds"
+    },
+    {
+      "fixture": "miscellanea/tetrahedron.scaled.stp",
+      "seed": 2,
+      "backend": "freecad",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": [
+        "0",
+        "21",
+        "2",
+        "33771 (Git)",
+        "Unknown",
+        "2023/11/14 02:33:39",
+        "(HEAD detached at 0.21.2)",
+        "b9bfa5c5507506e4515816414cd27f4851d00489"
+      ],
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 25,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 33.59692893530931,
+      "intersections": [
+        [
+          [
+            5.426634655615009,
+            4.062256743240653,
+            4.925191357016051
+          ]
+        ],
+        [
+          [
+            -0.4748646132404062,
+            9.187161533101015,
+            4.804330999303131
+          ]
+        ],
+        [
+          [
+            3.1418289029016755,
+            4.7127433543525115,
+            9.709144514508374
+          ]
+        ]
+      ],
+      "status": "timeout",
+      "error": "Exceeded 90 seconds"
+    }
+  ]
+}

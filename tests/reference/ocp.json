@@ -1,0 +1,1412 @@
+{
+  "backend": "ocp",
+  "records": [
+    {
+      "fixture": "cube/unit_cube.stp",
+      "seed": 0,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 23,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.73283673976786,
+      "intersections": [
+        [
+          [
+            3.0256099087434656,
+            3.3179390717104744,
+            4.276914675360735
+          ]
+        ],
+        [
+          [
+            1.6303116632676373,
+            3.924220841830907,
+            4.120148709438018
+          ]
+        ],
+        [
+          [
+            2.200867880953472,
+            3.3013018214302075,
+            5.004339404767359
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [
+          [
+            3.001964212157258,
+            2.452031774668341,
+            2.698491397821024
+          ],
+          [
+            0.9983384942446598,
+            3.548239714004759,
+            5.301491389438154
+          ],
+          [
+            3.4532216255895256,
+            2.31150922262173,
+            4.641171800459784
+          ],
+          [
+            1.6018188568258083,
+            1.6622151072622113,
+            5.0245369505067305
+          ],
+          [
+            2.849973144880662,
+            4.196876967662389,
+            4.91765479244879
+          ],
+          [
+            1.1500562819197244,
+            1.8030113192971695,
+            3.0822563056270447
+          ],
+          [
+            0.5465063321528405,
+            3.6887364802240272,
+            3.359109609709533
+          ],
+          [
+            2.398333078556484,
+            4.337716470330712,
+            2.9759820435151783
+          ]
+        ],
+        "featureMinPoints": [],
+        "featureMaxCentres": [],
+        "featureMinCentres": [],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 1.0,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.23165232805950264,
+        "negative": 0.10130648784976545
+      },
+      "status": "ok",
+      "log_tail": "Radius point deviation:  0.00024114376034045648\nRadius point deviation:  1.1151682954846365e-07\nRadius point deviation:  0.0026658086971307338\nRadius point deviation:  0.0006563410953763782\nRadius point deviation:  0.0012481289613237578\nRadius point deviation:  9.360260400104181e-08\nRadius point deviation:  0.0003555223776467997\nRadius point deviation:  9.478370421867055e-08\nRadius point deviation:  0.0012179665160367836\nRadius point deviation:  9.288890301384356e-08\nRadius point deviation:  0.001351050303285417\nRadius point deviation:  9.167847814239849e-08\nRadius point deviation:  8.140180518534379e-08\nRadius point deviation:  6.921328751929856e-05\nRadius point deviation:  0.0003319947384248234\nRadius point deviation:  0.0011394746003778877\nRadius point deviation:  0.00044697190784526164\nRadius point deviation:  0.0009883398419712197\nRadius point deviation:  0.000854959198999028\nRadius point deviation:  0.0012241964246498815\nRadius point deviation:  0.0009932690146359224\nRadius point deviation:  8.650699401258066e-08\nRadius point deviation:  0.0007250528720526006\nRadius point deviation:  0.00034336682598012924\nRadius point deviation:  7.08146284222888e-05\nRadius point deviation:  0.00044647200079839244\nRadius point deviation:  6.88920184561681e-05\nRadius point deviation:  0.0008548371746699424\nRadius point deviation:  6.972870617261151e-05\nRadius point deviation:  0.0009984891654326589\nRadius point deviation:  7.093491021969989e-05\nRadius point deviation:  0.0007216402400955779\nRadius point deviation:  0.004960955661565958\nRadius point deviation:  0.004960895842891722\nRadius point deviation:  0.004960807646066878\nRadius point deviation:  0.004952442711096405\nRadius point deviation:  0.004960719107452882\nRadius point deviation:  0.004958854970815385\nRadius point deviation:  0.004957265628571461\nRadius point deviation:  0.004957287524983589\nRadius point deviation:  0.004958954003869476\nRadius point deviation:  0.004952503210698511\nRadius point deviation:  0.0049573121395467545\nRadius point deviation:  0.004958832254983059\nRadius point deviation:  0.004956879533372982\nRadius point deviation:  0.004957237709941831\nRadius point deviation:  0.004952454419261509\nRadius point deviation:  0.004957221521722732\nRadius point deviation:  0.0049498924634927555\nRadius point deviation:  0.004958879497388602\nRadius point deviation:  0.004957266173022279\nRadius point deviation:  0.004960969861827258\nRadius point deviation:  0.004956876194072923\nRadius point deviation:  0.0049609692661092275\nRadius point deviation:  0.004952505204342983\nRadius point deviation:  0.004960968135781951\nRadius point deviation:  0.00494996473686049\nSVD transform reflection detected\nSVD transform reflection detected\n"
+    },
+    {
+      "fixture": "cube/unit_cube.stp",
+      "seed": 1,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 24,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.7763009017938565,
+      "intersections": [
+        [
+          [
+            3.0299229458095813,
+            3.3192761132009703,
+            4.278079195368586
+          ]
+        ],
+        [
+          [
+            1.6305535261994974,
+            3.9236161845012565,
+            4.120070103985163
+          ]
+        ],
+        [
+          [
+            2.2010424755088427,
+            3.3015637132632634,
+            5.005212377544213
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [
+          [
+            2.841554263475606,
+            4.204636354526135,
+            4.915527653538621
+          ],
+          [
+            3.4688248026395017,
+            2.3288409565202977,
+            4.624276183994517
+          ],
+          [
+            2.3696620785423708,
+            4.347920232147407,
+            2.9780317016490874
+          ],
+          [
+            1.0030345382309507,
+            3.5279087551915396,
+            5.312906371884074
+          ],
+          [
+            2.9971625821112853,
+            2.4722831272230326,
+            2.686996359714629
+          ],
+          [
+            0.5310835962978728,
+            3.671106021056932,
+            3.3761303207043034
+          ],
+          [
+            1.6303336675729425,
+            1.6524456206300349,
+            5.021750117459463
+          ],
+          [
+            1.1585912818639523,
+            1.7954570528333489,
+            3.0844626352313766
+          ]
+        ],
+        "featureMinPoints": [],
+        "featureMaxCentres": [],
+        "featureMinCentres": [],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 1.0,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.00012826077829121595,
+        "negative": 0.16667642260059665
+      },
+      "status": "ok",
+      "log_tail": "Radius point deviation:  0.00024114376034045648\nRadius point deviation:  1.1151682954846365e-07\nRadius point deviation:  0.0026658086971307338\nRadius point deviation:  0.0006563410953763782\nRadius point deviation:  0.0012481289613237578\nRadius point deviation:  9.360260400104181e-08\nRadius point deviation:  0.0003555223776467997\nRadius point deviation:  9.478370421867055e-08\nRadius point deviation:  0.0012179665160367836\nRadius point deviation:  9.288890301384356e-08\nRadius point deviation:  0.001351050303285417\nRadius point deviation:  9.167847814239849e-08\nRadius point deviation:  8.140180518534379e-08\nRadius point deviation:  6.921328751929856e-05\nRadius point deviation:  0.0003319947384248234\nRadius point deviation:  0.0011394746003778877\nRadius point deviation:  0.00044697190784526164\nRadius point deviation:  0.0009883398419712197\nRadius point deviation:  0.000854959198999028\nRadius point deviation:  0.0012241964246498815\nRadius point deviation:  0.0009932690146359224\nRadius point deviation:  8.650699401258066e-08\nRadius point deviation:  0.0007250528720526006\nRadius point deviation:  0.00034336682598012924\nRadius point deviation:  7.08146284222888e-05\nRadius point deviation:  0.00044647200079839244\nRadius point deviation:  6.88920184561681e-05\nRadius point deviation:  0.0008548371746699424\nRadius point deviation:  6.972870617261151e-05\nRadius point deviation:  0.0009984891654326589\nRadius point deviation:  7.093491021969989e-05\nRadius point deviation:  0.0007216402400955779\nRadius point deviation:  0.004960955661565958\nRadius point deviation:  0.004960895842891722\nRadius point deviation:  0.004960807646066878\nRadius point deviation:  0.004952442711096405\nRadius point deviation:  0.004960719107452882\nRadius point deviation:  0.004958854970815385\nRadius point deviation:  0.004957265628571461\nRadius point deviation:  0.004957287524983589\nRadius point deviation:  0.004958954003869476\nRadius point deviation:  0.004952503210698511\nRadius point deviation:  0.0049573121395467545\nRadius point deviation:  0.004958832254983059\nRadius point deviation:  0.004956879533372982\nRadius point deviation:  0.004957237709941831\nRadius point deviation:  0.004952454419261509\nRadius point deviation:  0.004957221521722732\nRadius point deviation:  0.0049498924634927555\nRadius point deviation:  0.004958879497388602\nRadius point deviation:  0.004957266173022279\nRadius point deviation:  0.004960969861827258\nRadius point deviation:  0.004956876194072923\nRadius point deviation:  0.0049609692661092275\nRadius point deviation:  0.004952505204342983\nRadius point deviation:  0.004960968135781951\nRadius point deviation:  0.00494996473686049\nSVD transform reflection detected\nSVD transform reflection detected\n"
+    },
+    {
+      "fixture": "cube/unit_cube.stp",
+      "seed": 2,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 25,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.8186583338676074,
+      "intersections": [
+        [
+          [
+            3.034532299090261,
+            3.320705012717981,
+            4.27932372075437
+          ]
+        ],
+        [
+          [
+            1.6307121746982345,
+            3.923219563254414,
+            4.120018543223074
+          ]
+        ],
+        [
+          [
+            2.2012285069286284,
+            3.3018427603929426,
+            5.006142534643142
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [
+          [
+            3.48404107251604,
+            2.3467176123290616,
+            4.6075241624001375
+          ],
+          [
+            1.0077014492367047,
+            3.5082067578016263,
+            5.3247613396760975
+          ],
+          [
+            1.1676386115075295,
+            1.7877866418989168,
+            3.0867920191163116
+          ],
+          [
+            2.3412938451238405,
+            4.357381872084745,
+            2.981033575794357
+          ],
+          [
+            2.8333615216925394,
+            4.212337981422981,
+            4.91351146047275
+          ],
+          [
+            0.5163208269333547,
+            3.6532229686495086,
+            3.3930268691094185
+          ],
+          [
+            1.6584318645844343,
+            1.6420822822972787,
+            5.0180950576008145
+          ],
+          [
+            2.9916280218407714,
+            2.4928623103924687,
+            2.6752225658398103
+          ]
+        ],
+        "featureMinPoints": [],
+        "featureMaxCentres": [],
+        "featureMinCentres": [],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 1.0,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.22363836624185235,
+        "negative": 0.12029458406069271
+      },
+      "status": "ok",
+      "log_tail": "Radius point deviation:  0.00024114376034045648\nRadius point deviation:  1.1151682954846365e-07\nRadius point deviation:  0.0026658086971307338\nRadius point deviation:  0.0006563410953763782\nRadius point deviation:  0.0012481289613237578\nRadius point deviation:  9.360260400104181e-08\nRadius point deviation:  0.0003555223776467997\nRadius point deviation:  9.478370421867055e-08\nRadius point deviation:  0.0012179665160367836\nRadius point deviation:  9.288890301384356e-08\nRadius point deviation:  0.001351050303285417\nRadius point deviation:  9.167847814239849e-08\nRadius point deviation:  8.140180518534379e-08\nRadius point deviation:  6.921328751929856e-05\nRadius point deviation:  0.0003319947384248234\nRadius point deviation:  0.0011394746003778877\nRadius point deviation:  0.00044697190784526164\nRadius point deviation:  0.0009883398419712197\nRadius point deviation:  0.000854959198999028\nRadius point deviation:  0.0012241964246498815\nRadius point deviation:  0.0009932690146359224\nRadius point deviation:  8.650699401258066e-08\nRadius point deviation:  0.0007250528720526006\nRadius point deviation:  0.00034336682598012924\nRadius point deviation:  7.08146284222888e-05\nRadius point deviation:  0.00044647200079839244\nRadius point deviation:  6.88920184561681e-05\nRadius point deviation:  0.0008548371746699424\nRadius point deviation:  6.972870617261151e-05\nRadius point deviation:  0.0009984891654326589\nRadius point deviation:  7.093491021969989e-05\nRadius point deviation:  0.0007216402400955779\nRadius point deviation:  0.004960955661565958\nRadius point deviation:  0.004960895842891722\nRadius point deviation:  0.004960807646066878\nRadius point deviation:  0.004952442711096405\nRadius point deviation:  0.004960719107452882\nRadius point deviation:  0.004958854970815385\nRadius point deviation:  0.004957265628571461\nRadius point deviation:  0.004957287524983589\nRadius point deviation:  0.004958954003869476\nRadius point deviation:  0.004952503210698511\nRadius point deviation:  0.0049573121395467545\nRadius point deviation:  0.004958832254983059\nRadius point deviation:  0.004956879533372982\nRadius point deviation:  0.004957237709941831\nRadius point deviation:  0.004952454419261509\nRadius point deviation:  0.004957221521722732\nRadius point deviation:  0.0049498924634927555\nRadius point deviation:  0.004958879497388602\nRadius point deviation:  0.004957266173022279\nRadius point deviation:  0.004960969861827258\nRadius point deviation:  0.004956876194072923\nRadius point deviation:  0.0049609692661092275\nRadius point deviation:  0.004952505204342983\nRadius point deviation:  0.004960968135781951\nRadius point deviation:  0.00494996473686049\nSVD transform reflection detected\nSVD transform reflection detected\n"
+    },
+    {
+      "fixture": "sphere/unit_sphere.stp",
+      "seed": 0,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 23,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 3.4641016151377544,
+      "intersections": [
+        [
+          [
+            2.924895666092419,
+            3.28671765648865,
+            4.249721829844953
+          ]
+        ],
+        [
+          [
+            1.6312855059643194,
+            3.921786235089202,
+            4.119832210561596
+          ]
+        ],
+        [
+          [
+            2.188144173676719,
+            3.282216260515078,
+            4.940720868383593
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [],
+        "featureMinPoints": [],
+        "featureMaxCentres": [],
+        "featureMinCentres": [],
+        "spherePoints": [],
+        "featureSphereDisps": [
+          0.9725074581827264,
+          0.9307033451703408,
+          0.9445668329258474,
+          0.9987603007872522,
+          1.0091509250061084,
+          1.0268019618006536
+        ]
+      },
+      "histograms": {
+        "positive": 0.75,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.0,
+        "negative": "inf"
+      },
+      "status": "ok",
+      "log_tail": "inadequate definition warning\ninadequate definition warning\n low disp src: minimum curve type?\n"
+    },
+    {
+      "fixture": "sphere/unit_sphere.stp",
+      "seed": 1,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 24,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 3.4641016151377544,
+      "intersections": [
+        [
+          [
+            2.9248956660924215,
+            3.286717656488651,
+            4.249721829844954
+          ]
+        ],
+        [
+          [
+            1.631285505964318,
+            3.921786235089205,
+            4.119832210561596
+          ]
+        ],
+        [
+          [
+            2.1881441736767195,
+            3.282216260515079,
+            4.940720868383597
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [],
+        "featureMinPoints": [],
+        "featureMaxCentres": [],
+        "featureMinCentres": [],
+        "spherePoints": [],
+        "featureSphereDisps": [
+          0.9725074581827197,
+          0.9307033451703398,
+          0.9445668329258468,
+          0.9987603007872536,
+          1.0091509250061095,
+          1.026801961800654
+        ]
+      },
+      "histograms": {
+        "positive": 0.75,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.0,
+        "negative": "inf"
+      },
+      "status": "ok",
+      "log_tail": "inadequate definition warning\ninadequate definition warning\n low disp src: minimum curve type?\n"
+    },
+    {
+      "fixture": "sphere/unit_sphere.stp",
+      "seed": 2,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 25,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 3.4641016151377544,
+      "intersections": [
+        [
+          [
+            2.924895666092425,
+            3.2867176564886518,
+            4.249721829844955
+          ]
+        ],
+        [
+          [
+            1.6312855059643165,
+            3.9217862350892085,
+            4.119832210561597
+          ]
+        ],
+        [
+          [
+            2.1881441736767204,
+            3.2822162605150798,
+            4.9407208683836
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [],
+        "featureMinPoints": [],
+        "featureMaxCentres": [],
+        "featureMinCentres": [],
+        "spherePoints": [],
+        "featureSphereDisps": [
+          0.9725074581827309,
+          0.9307033451703479,
+          0.9445668329258496,
+          0.9987603007872641,
+          1.0091509250061141,
+          1.0268019618006623
+        ]
+      },
+      "histograms": {
+        "positive": 0.75,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.0,
+        "negative": "inf"
+      },
+      "status": "ok",
+      "log_tail": "inadequate definition warning\ninadequate definition warning\n low disp src: minimum curve type?\n"
+    },
+    {
+      "fixture": "cylinder/unit_cyl.stp",
+      "seed": 0,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 23,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.020059708510895,
+      "intersections": [
+        [
+          [
+            3.025191302513612,
+            3.31780930377922,
+            4.276801651678674
+          ]
+        ],
+        [
+          [
+            1.6310999484804092,
+            3.9222501287989773,
+            4.119892516743867
+          ]
+        ],
+        [
+          [
+            2.200867880953472,
+            3.3013018214302075,
+            5.004339404767359
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [],
+        "featureMinPoints": [
+          [
+            2.226871071110348,
+            2.9275461253604975,
+            4.97122883734979
+          ],
+          [
+            1.774216883448488,
+            3.0704959845231588,
+            3.0283764458482714
+          ]
+        ],
+        "featureMaxCentres": [
+          [
+            1.7744017930467704,
+            3.070718752726098,
+            3.028557431088222
+          ],
+          [
+            2.2261138764036392,
+            2.9299047896585484,
+            4.971551073431881
+          ]
+        ],
+        "featureMinCentres": [
+          [
+            2.079243645669534,
+            3.0856560510875473,
+            3.9975894429088368
+          ]
+        ],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 1.0,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.00046064824081060423,
+        "negative": 0.23877982936572598
+      },
+      "status": "ok",
+      "log_tail": "Radius point deviation:  0.000972358848480237\nRadius point deviation:  0.0025749804004620014\nRadius point deviation:  0.0005797828976366048\nRadius point deviation:  0.0004774126426159153\nRadius point deviation:  0.003243688883590501\nRadius point deviation:  0.00024513571087614316\nRadius point deviation:  0.001568054106485528\nRadius point deviation:  0.0007017666720245952\nRadius point deviation:  0.003094845741971275\nRadius point deviation:  0.0023166474079316934\nRadius point deviation:  0.0005718179109646115\nRadius point deviation:  0.0014271851929195112\nRadius point deviation:  0.0005412030078626451\nRadius point deviation:  0.0008213125095175577\nRadius point deviation:  0.004824918509063414\nRadius point deviation:  0.002407556930556387\nRadius point deviation:  0.002160964587166747\nRadius point deviation:  0.0008415441954572334\nRadius point deviation:  0.0002828705277286847\nRadius point deviation:  0.0005713744192616943\nRadius point deviation:  0.001485704137478061\nRadius point deviation:  0.0006428282170045652\nRadius point deviation:  0.003676857289816704\nRadius point deviation:  0.0031648414647735823\nRadius point deviation:  0.005334805828952849\nRadius point deviation:  0.00043529187570068295\nRadius point deviation:  9.506633536071618e-05\nRadius point deviation:  0.0008055428837840939\nRadius point deviation:  0.00026533589804178526\nRadius point deviation:  0.00243336748250389\nRadius point deviation:  0.000234602990646815\nRadius point deviation:  0.00017951627592283081\nRadius point deviation:  0.0008409486443332614\nRadius point deviation:  0.002542024468827675\nRadius point deviation:  0.0010623888490852718\nRadius point deviation:  0.0011509473612925092\nRadius point deviation:  0.0041721566788841535\nRadius point deviation:  0.001967903534179527\nRadius point deviation:  1.1484483533891812\nRadius point deviation:  0.00196983999544309\nRadius point deviation:  0.0019114314197192783\nRadius point deviation:  1.252053282768743\nRadius point deviation:  0.0017511115804287325\nRadius point deviation:  0.0019651414050632088\nRadius point deviation:  1.3057164444793028\nRadius point deviation:  0.0011261129564579253\nRadius point deviation:  0.002480635069655568\nRadius point deviation:  0.0016640708297843698\nRadius point deviation:  0.040047397763099735\nRadius point deviation:  0.0019290981025907872\nRadius point deviation:  0.0019496446842703907\nRadius point deviation:  0.0019406048417975885\nRadius point deviation:  0.0015385370205183158\nRadius point deviation:  0.002444025639060765\nRadius point deviation:  0.0019702587487480105\nRadius point deviation:  0.0017394329633515504\nRadius point deviation:  0.0016315202035372955\nRadius point deviation:  0.0010730704442343253\nRadius point deviation:  0.001911806579440567\nRadius point deviation:  0.001070465402270404\nRadius point deviation:  0.002645921613442459\nRadius point deviation:  0.0017243488768150517\nRadius point deviation:  0.0019362431263250102\nSVD transform reflection detected\nSVD transform reflection detected\n"
+    },
+    {
+      "fixture": "cylinder/unit_cyl.stp",
+      "seed": 1,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 24,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.039511604912992,
+      "intersections": [
+        [
+          [
+            3.029775223078709,
+            3.3192303191544,
+            4.278039310231251
+          ]
+        ],
+        [
+          [
+            1.6310340969084542,
+            3.9224147577288644,
+            4.119913918504753
+          ]
+        ],
+        [
+          [
+            2.2010424755088427,
+            3.3015637132632634,
+            5.005212377544213
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [],
+        "featureMinPoints": [
+          [
+            2.2385063134872203,
+            2.923958986884845,
+            4.9681731599468675
+          ],
+          [
+            1.7640706738301564,
+            3.071929505818248,
+            3.0308954772043957
+          ]
+        ],
+        "featureMaxCentres": [
+          [
+            1.7639161897210605,
+            3.0716635624994275,
+            3.0308763077635166
+          ],
+          [
+            2.235478777979413,
+            2.927832980764469,
+            4.9696305698478636
+          ]
+        ],
+        "featureMinCentres": [
+          [
+            2.255438655560114,
+            3.0280929965536973,
+            4.05088537474349
+          ]
+        ],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 1.0,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.0009485845336661955,
+        "negative": 0.22257666722534064
+      },
+      "status": "ok",
+      "log_tail": "Radius point deviation:  0.000972358848480237\nRadius point deviation:  0.0025749804004620014\nRadius point deviation:  0.0005797828976366048\nRadius point deviation:  0.0004774126426159153\nRadius point deviation:  0.003243688883590501\nRadius point deviation:  0.00024513571087614316\nRadius point deviation:  0.001568054106485528\nRadius point deviation:  0.0007017666720245952\nRadius point deviation:  0.003094845741971275\nRadius point deviation:  0.0023166474079316934\nRadius point deviation:  0.0005718179109646115\nRadius point deviation:  0.0014271851929195112\nRadius point deviation:  0.0005412030078626451\nRadius point deviation:  0.0008213125095175577\nRadius point deviation:  0.004824918509063414\nRadius point deviation:  0.002407556930556387\nRadius point deviation:  0.002160964587166747\nRadius point deviation:  0.0008415441954572334\nRadius point deviation:  0.0002828705277286847\nRadius point deviation:  0.0005713744192616943\nRadius point deviation:  0.001485704137478061\nRadius point deviation:  0.0006428282170045652\nRadius point deviation:  0.003676857289816704\nRadius point deviation:  0.0031648414647735823\nRadius point deviation:  0.005334805828952849\nRadius point deviation:  0.00043529187570068295\nRadius point deviation:  9.506633536071618e-05\nRadius point deviation:  0.0008055428837840939\nRadius point deviation:  0.00026533589804178526\nRadius point deviation:  0.00243336748250389\nRadius point deviation:  0.000234602990646815\nRadius point deviation:  0.00017951627592283081\nRadius point deviation:  0.0008409486443332614\nRadius point deviation:  0.002542024468827675\nRadius point deviation:  0.0010623888490852718\nRadius point deviation:  0.0011509473612925092\nRadius point deviation:  0.0041721566788841535\nRadius point deviation:  0.001967903534179527\nRadius point deviation:  1.1484483533891812\nRadius point deviation:  0.00196983999544309\nRadius point deviation:  0.0019114314197192783\nRadius point deviation:  1.252053282768743\nRadius point deviation:  0.0017511115804287325\nRadius point deviation:  0.0019651414050632088\nRadius point deviation:  1.3057164444793028\nRadius point deviation:  0.0011261129564579253\nRadius point deviation:  0.002480635069655568\nRadius point deviation:  0.0016640708297843698\nRadius point deviation:  0.040047397763099735\nRadius point deviation:  0.0019290981025907872\nRadius point deviation:  0.0019496446842703907\nRadius point deviation:  0.0019406048417975885\nRadius point deviation:  0.0015385370205183158\nRadius point deviation:  0.002444025639060765\nRadius point deviation:  0.0019702587487480105\nRadius point deviation:  0.0017394329633515504\nRadius point deviation:  0.0016315202035372955\nRadius point deviation:  0.0010730704442343253\nRadius point deviation:  0.001911806579440567\nRadius point deviation:  0.001070465402270404\nRadius point deviation:  0.002645921613442459\nRadius point deviation:  0.0017243488768150517\nRadius point deviation:  0.0019362431263250102\nSVD transform reflection detected\nSVD transform reflection detected\n"
+    },
+    {
+      "fixture": "cylinder/unit_cyl.stp",
+      "seed": 2,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 25,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 4.05853081171047,
+      "intersections": [
+        [
+          [
+            3.0345177420148683,
+            3.3207005000246093,
+            4.279319790344014
+          ]
+        ],
+        [
+          [
+            1.6309602651155521,
+            3.9225993372111203,
+            4.119937913837446
+          ]
+        ],
+        [
+          [
+            2.2012285069286284,
+            3.3018427603929426,
+            5.006142534643142
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [],
+        "featureMinPoints": [
+          [
+            2.247692657188405,
+            2.924574643271741,
+            4.965903529816791
+          ],
+          [
+            1.754216956608335,
+            3.072374794867677,
+            3.0333807339524896
+          ]
+        ],
+        "featureMaxCentres": [
+          [
+            1.7542800428904204,
+            3.0725102005394826,
+            3.03410733969458
+          ],
+          [
+            2.245414795815457,
+            2.926872953204492,
+            4.966469507930009
+          ]
+        ],
+        "featureMinCentres": [
+          [
+            2.0220622400804236,
+            2.9046481861509497,
+            3.984407886043188
+          ]
+        ],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 1.0,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.0009289848319511466,
+        "negative": 0.24211717478404124
+      },
+      "status": "ok",
+      "log_tail": "Radius point deviation:  0.000972358848480237\nRadius point deviation:  0.0025749804004620014\nRadius point deviation:  0.0005797828976366048\nRadius point deviation:  0.0004774126426159153\nRadius point deviation:  0.003243688883590501\nRadius point deviation:  0.00024513571087614316\nRadius point deviation:  0.001568054106485528\nRadius point deviation:  0.0007017666720245952\nRadius point deviation:  0.003094845741971275\nRadius point deviation:  0.0023166474079316934\nRadius point deviation:  0.0005718179109646115\nRadius point deviation:  0.0014271851929195112\nRadius point deviation:  0.0005412030078626451\nRadius point deviation:  0.0008213125095175577\nRadius point deviation:  0.004824918509063414\nRadius point deviation:  0.002407556930556387\nRadius point deviation:  0.002160964587166747\nRadius point deviation:  0.0008415441954572334\nRadius point deviation:  0.0002828705277286847\nRadius point deviation:  0.0005713744192616943\nRadius point deviation:  0.001485704137478061\nRadius point deviation:  0.0006428282170045652\nRadius point deviation:  0.003676857289816704\nRadius point deviation:  0.0031648414647735823\nRadius point deviation:  0.005334805828952849\nRadius point deviation:  0.00043529187570068295\nRadius point deviation:  9.506633536071618e-05\nRadius point deviation:  0.0008055428837840939\nRadius point deviation:  0.00026533589804178526\nRadius point deviation:  0.00243336748250389\nRadius point deviation:  0.000234602990646815\nRadius point deviation:  0.00017951627592283081\nRadius point deviation:  0.0008409486443332614\nRadius point deviation:  0.002542024468827675\nRadius point deviation:  0.0010623888490852718\nRadius point deviation:  0.0011509473612925092\nRadius point deviation:  0.0041721566788841535\nRadius point deviation:  0.001967903534179527\nRadius point deviation:  1.1484483533891812\nRadius point deviation:  0.00196983999544309\nRadius point deviation:  0.0019114314197192783\nRadius point deviation:  1.252053282768743\nRadius point deviation:  0.0017511115804287325\nRadius point deviation:  0.0019651414050632088\nRadius point deviation:  1.3057164444793028\nRadius point deviation:  0.0011261129564579253\nRadius point deviation:  0.002480635069655568\nRadius point deviation:  0.0016640708297843698\nRadius point deviation:  0.040047397763099735\nRadius point deviation:  0.0019290981025907872\nRadius point deviation:  0.0019496446842703907\nRadius point deviation:  0.0019406048417975885\nRadius point deviation:  0.0015385370205183158\nRadius point deviation:  0.002444025639060765\nRadius point deviation:  0.0019702587487480105\nRadius point deviation:  0.0017394329633515504\nRadius point deviation:  0.0016315202035372955\nRadius point deviation:  0.0010730704442343253\nRadius point deviation:  0.001911806579440567\nRadius point deviation:  0.001070465402270404\nRadius point deviation:  0.002645921613442459\nRadius point deviation:  0.0017243488768150517\nRadius point deviation:  0.0019362431263250102\nSVD transform reflection detected\nSVD transform reflection detected\n"
+    },
+    {
+      "fixture": "torus/unit_torus.stp",
+      "seed": 0,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 23,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 8.906867509457227,
+      "intersections": [
+        [
+          [
+            3.2011939299586505,
+            3.372370118287182,
+            4.324322361088835
+          ],
+          [
+            4.136454335527631,
+            3.662300844013566,
+            4.57684267059246
+          ]
+        ],
+        [
+          [
+            0.8949698636436032,
+            5.762575340890992,
+            4.359134794315828
+          ],
+          [
+            1.6309140168061207,
+            3.9227149579846987,
+            4.119952944538011
+          ]
+        ],
+        []
+      ],
+      "features": {
+        "featureMaxPoints": [],
+        "featureMinPoints": [
+          [
+            2.96933792813284,
+            3.047416403415829,
+            3.7571841523500455
+          ]
+        ],
+        "featureMaxCentres": [
+          [
+            2.00263197177373,
+            2.998993548991459,
+            4.010976945319741
+          ]
+        ],
+        "featureMinCentres": [
+          [
+            2.0582175888356504,
+            3.173897205265626,
+            4.028398970191068
+          ]
+        ],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 0.6666666666666666,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": "inf",
+        "negative": 0.3485269330549447
+      },
+      "status": "ok",
+      "log_tail": "ius point deviation:  0.0027861348771311967\nRadius point deviation:  0.41499950965602417\nRadius point deviation:  2.492850585023021e-05\nRadius point deviation:  0.8136524719412845\nRadius point deviation:  6.789682735786062e-05\nRadius point deviation:  0.027797154482322783\nRadius point deviation:  0.4421348280370374\nRadius point deviation:  0.002821211724939432\nRadius point deviation:  0.005147584860251575\nRadius point deviation:  0.7149632786538347\nRadius point deviation:  0.0027950184175803416\nRadius point deviation:  0.05366054670444864\nRadius point deviation:  0.0004962114940223472\nRadius point deviation:  0.014099730332694627\nRadius point deviation:  0.013850917517919115\nRadius point deviation:  0.0008633779688747012\nRadius point deviation:  0.03884863637684077\nRadius point deviation:  0.03713718964543933\nRadius point deviation:  0.7989640051768925\nRadius point deviation:  0.032003381468396874\nRadius point deviation:  0.002828288325473771\nRadius point deviation:  0.03637346693138621\nRadius point deviation:  0.06615974983412709\nRadius point deviation:  0.0005109588374763163\nRadius point deviation:  1.0790519264094658\nRadius point deviation:  0.0012655439196445073\nRadius point deviation:  0.014677259712626345\nRadius point deviation:  0.9624196383917414\nRadius point deviation:  0.016898380258335344\nRadius point deviation:  0.029641793381959936\nRadius point deviation:  0.011375063200244284\nRadius point deviation:  0.0013650239868212566\nRadius point deviation:  0.007689450741550807\nRadius point deviation:  0.038291117888944015\nRadius point deviation:  0.002068463387112196\nRadius point deviation:  0.0008448638159341826\nRadius point deviation:  0.001527317687199492\nRadius point deviation:  0.014560803231186803\nRadius point deviation:  1.3054180897774144\nRadius point deviation:  0.0017879368828521702\nRadius point deviation:  0.0023425683478914827\nRadius point deviation:  0.0022730188310617905\nRadius point deviation:  1.3595851132885872\nRadius point deviation:  0.0019476561901607958\nRadius point deviation:  0.02707439272005918\nRadius point deviation:  0.0007955549102174331\nRadius point deviation:  1.267720315925595\nRadius point deviation:  1.031073878365918\nRadius point deviation:  1.045552268118969\nRadius point deviation:  0.035079122310774036\nRadius point deviation:  0.0013789646988264792\nRadius point deviation:  0.0008954956889877241\nRadius point deviation:  0.0072931160622384805\nRadius point deviation:  0.009331501610030823\nRadius point deviation:  1.3054180897774144\nRadius point deviation:  0.0017879368828521702\nRadius point deviation:  0.0023425683478914827\nRadius point deviation:  0.0022730188310617905\nRadius point deviation:  1.3595851132885872\nRadius point deviation:  0.0019476561901607958\nRadius point deviation:  0.02707439272005918\nRadius point deviation:  0.0007955549102174331\ninadequate definition warning\n low disp src: minimum curve type?\nInadequate common points between source and target for comparison\nSVD transform reflection detected\n"
+    },
+    {
+      "fixture": "torus/unit_torus.stp",
+      "seed": 1,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 24,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 8.913607519223184,
+      "intersections": [
+        [
+          [
+            3.221010235339357,
+            3.3785131729552007,
+            4.329672763541626
+          ],
+          [
+            4.101780890277613,
+            3.6515520759860607,
+            4.567480840374955
+          ]
+        ],
+        [
+          [
+            0.895364974336404,
+            5.76158756415899,
+            4.3590063833406685
+          ],
+          [
+            1.6307820005155498,
+            3.9230449987111258,
+            4.1199958498324465
+          ]
+        ],
+        []
+      ],
+      "features": {
+        "featureMaxPoints": [],
+        "featureMinPoints": [],
+        "featureMaxCentres": [
+          [
+            1.9939573684168106,
+            3.001582731620909,
+            3.96983354077019
+          ]
+        ],
+        "featureMinCentres": [],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 0.5,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": "inf",
+        "negative": "inf"
+      },
+      "status": "ok",
+      "log_tail": " 0.0019876716452817966\nRadius point deviation:  0.008181396602822133\nRadius point deviation:  2.5612297073005497\nRadius point deviation:  0.0006701298734377303\nRadius point deviation:  0.1492889981347867\nRadius point deviation:  4.28559547849261e-06\nRadius point deviation:  0.008987066460728776\nRadius point deviation:  1.1264149823997371e-05\nRadius point deviation:  0.020698956279760594\nRadius point deviation:  1.2957575945549138e-07\ninadequate definition warning\nRadius point deviation:  0.05366054670444864\nRadius point deviation:  0.0004962114940223472\nRadius point deviation:  0.014099730332694627\nRadius point deviation:  0.013850917517919115\nRadius point deviation:  0.0008633779688747012\nRadius point deviation:  0.03884863637684077\nRadius point deviation:  0.03713718964543933\nRadius point deviation:  0.7989640051768925\nRadius point deviation:  0.032003381468396874\nRadius point deviation:  0.002828288325473771\nRadius point deviation:  0.03637346693138621\nRadius point deviation:  0.06615974983412709\nRadius point deviation:  0.0005109588374763163\nRadius point deviation:  1.0790519264094658\nRadius point deviation:  0.0012655439196445073\nRadius point deviation:  0.014677259712626345\nRadius point deviation:  0.9624196383917414\nRadius point deviation:  0.016898380258335344\nRadius point deviation:  0.029641793381959936\nRadius point deviation:  0.011375063200244284\nRadius point deviation:  0.0013650239868212566\nRadius point deviation:  0.007689450741550807\nRadius point deviation:  0.038291117888944015\nRadius point deviation:  0.002068463387112196\nRadius point deviation:  0.0008448638159341826\nRadius point deviation:  0.001527317687199492\nRadius point deviation:  0.014560803231186803\nRadius point deviation:  1.3054180897774144\nRadius point deviation:  0.0017879368828521702\nRadius point deviation:  0.0023425683478914827\nRadius point deviation:  0.0022730188310617905\nRadius point deviation:  1.3595851132885872\nRadius point deviation:  0.0019476561901607958\nRadius point deviation:  0.02707439272005918\nRadius point deviation:  0.0007955549102174331\nRadius point deviation:  1.267720315925595\nRadius point deviation:  1.031073878365918\nRadius point deviation:  1.045552268118969\nRadius point deviation:  0.035079122310774036\nRadius point deviation:  0.0013789646988264792\nRadius point deviation:  0.0008954956889877241\nRadius point deviation:  0.0072931160622384805\nRadius point deviation:  0.009331501610030823\nRadius point deviation:  1.3054180897774144\nRadius point deviation:  0.0017879368828521702\nRadius point deviation:  0.0023425683478914827\nRadius point deviation:  0.0022730188310617905\nRadius point deviation:  1.3595851132885872\nRadius point deviation:  0.0019476561901607958\nRadius point deviation:  0.02707439272005918\nRadius point deviation:  0.0007955549102174331\ninadequate definition warning\n low disp src: minimum curve type?\nInadequate common points between source and target for comparison\nInadequate common points between source and target for comparison\n"
+    },
+    {
+      "fixture": "torus/unit_torus.stp",
+      "seed": 2,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 25,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 8.920219559523423,
+      "intersections": [
+        [
+          [
+            3.243060545478143,
+            3.3853487690982242,
+            4.335626347279098
+          ],
+          [
+            4.064497975424445,
+            3.639994372381578,
+            4.557414453364599
+          ]
+        ],
+        [
+          [
+            0.8958079675528516,
+            5.760480081117872,
+            4.358862410545323
+          ],
+          [
+            1.6306338731388292,
+            3.923415317152927,
+            4.12004399122988
+          ]
+        ],
+        []
+      ],
+      "features": {
+        "featureMaxPoints": [],
+        "featureMinPoints": [],
+        "featureMaxCentres": [
+          [
+            2.0022999008466793,
+            3.0004278961320794,
+            4.014791533510889
+          ]
+        ],
+        "featureMinCentres": [
+          [
+            2.0278085668766606,
+            3.0763547924244965,
+            4.00745919879324
+          ]
+        ],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 1.0,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.1665580312239796,
+        "negative": 29.975569799005317
+      },
+      "status": "ok",
+      "log_tail": "int deviation:  0.8049525991280917\nRadius point deviation:  0.005531806566652975\nRadius point deviation:  0.0230941183322263\nRadius point deviation:  0.006582354891102482\nRadius point deviation:  0.002874888706661194\nRadius point deviation:  0.7974166673126952\nRadius point deviation:  0.004567992484337147\nRadius point deviation:  0.0054665400145497145\nRadius point deviation:  0.005368768076776997\nRadius point deviation:  0.005506728516834758\nRadius point deviation:  0.0070632724438416394\nRadius point deviation:  0.8447037505556472\ninadequate definition warning\nRadius point deviation:  0.05366054670444864\nRadius point deviation:  0.0004962114940223472\nRadius point deviation:  0.014099730332694627\nRadius point deviation:  0.013850917517919115\nRadius point deviation:  0.0008633779688747012\nRadius point deviation:  0.03884863637684077\nRadius point deviation:  0.03713718964543933\nRadius point deviation:  0.7989640051768925\nRadius point deviation:  0.032003381468396874\nRadius point deviation:  0.002828288325473771\nRadius point deviation:  0.03637346693138621\nRadius point deviation:  0.06615974983412709\nRadius point deviation:  0.0005109588374763163\nRadius point deviation:  1.0790519264094658\nRadius point deviation:  0.0012655439196445073\nRadius point deviation:  0.014677259712626345\nRadius point deviation:  0.9624196383917414\nRadius point deviation:  0.016898380258335344\nRadius point deviation:  0.029641793381959936\nRadius point deviation:  0.011375063200244284\nRadius point deviation:  0.0013650239868212566\nRadius point deviation:  0.007689450741550807\nRadius point deviation:  0.038291117888944015\nRadius point deviation:  0.002068463387112196\nRadius point deviation:  0.0008448638159341826\nRadius point deviation:  0.001527317687199492\nRadius point deviation:  0.014560803231186803\nRadius point deviation:  1.3054180897774144\nRadius point deviation:  0.0017879368828521702\nRadius point deviation:  0.0023425683478914827\nRadius point deviation:  0.0022730188310617905\nRadius point deviation:  1.3595851132885872\nRadius point deviation:  0.0019476561901607958\nRadius point deviation:  0.02707439272005918\nRadius point deviation:  0.0007955549102174331\nRadius point deviation:  1.267720315925595\nRadius point deviation:  1.031073878365918\nRadius point deviation:  1.045552268118969\nRadius point deviation:  0.035079122310774036\nRadius point deviation:  0.0013789646988264792\nRadius point deviation:  0.0008954956889877241\nRadius point deviation:  0.0072931160622384805\nRadius point deviation:  0.009331501610030823\nRadius point deviation:  1.3054180897774144\nRadius point deviation:  0.0017879368828521702\nRadius point deviation:  0.0023425683478914827\nRadius point deviation:  0.0022730188310617905\nRadius point deviation:  1.3595851132885872\nRadius point deviation:  0.0019476561901607958\nRadius point deviation:  0.02707439272005918\nRadius point deviation:  0.0007955549102174331\ninadequate definition warning\nSVD transform reflection detected\nSVD transform reflection detected\n"
+    },
+    {
+      "fixture": "miscellanea/tetrahedron.scaled.stp",
+      "seed": 0,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 23,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 26.19318694037524,
+      "intersections": [
+        [
+          [
+            5.385440019788065,
+            4.049486406134301,
+            4.914068805342776
+          ]
+        ],
+        [
+          [
+            -0.3480565748905011,
+            8.870141437226255,
+            4.7631183868394125
+          ]
+        ],
+        [
+          [
+            3.133529116621127,
+            4.700293674931688,
+            9.66764558310563
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [
+          [
+            -4.745631425230379,
+            -3.7153264694919352,
+            1.7248516521204544
+          ],
+          [
+            10.057810415712527,
+            1.470217903752543,
+            -1.3430904093821
+          ],
+          [
+            -1.525512720019419,
+            11.933098623590245,
+            2.1056391291215872
+          ],
+          [
+            4.212721823691347,
+            2.3102749055608,
+            13.511615874325736
+          ]
+        ],
+        "featureMinPoints": [
+          [
+            3.73713966211132,
+            5.184175317076651,
+            6.4506643912771
+          ],
+          [
+            0.602388759287823,
+            4.497593139666813,
+            7.447538147394024
+          ],
+          [
+            3.9663812512311662,
+            0.7879299506148966,
+            6.789344882704457
+          ]
+        ],
+        "featureMaxCentres": [],
+        "featureMinCentres": [],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 0.875,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.16180250463731163,
+        "negative": 0.03123466919085367
+      },
+      "status": "ok",
+      "log_tail": " low disp src: minimum curve type?\nSVD transform reflection detected\nSVD transform reflection detected\n"
+    },
+    {
+      "fixture": "miscellanea/tetrahedron.scaled.stp",
+      "seed": 1,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 24,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 26.192634033824923,
+      "intersections": [
+        [
+          [
+            5.40565310914076,
+            4.055752463833636,
+            4.919526339468004
+          ]
+        ],
+        [
+          [
+            -0.4095348792882332,
+            9.023837198220583,
+            4.7830988357686754
+          ]
+        ],
+        [
+          [
+            3.137716634040172,
+            4.706574951060255,
+            9.688583170200854
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [
+          [
+            -4.671728894611594,
+            -3.7995505082748853,
+            1.7533343727049358
+          ],
+          [
+            10.026023563325534,
+            1.6074354079556805,
+            -1.4250366854152603
+          ],
+          [
+            -1.6662069731487394,
+            11.891099239954427,
+            2.1803917469617264
+          ],
+          [
+            4.31054583685626,
+            2.295875234669285,
+            13.485947943453153
+          ]
+        ],
+        "featureMinPoints": [
+          [
+            3.776199698863608,
+            5.165687305426606,
+            6.400269791358077
+          ],
+          [
+            0.5875537886142992,
+            4.408007583300232,
+            7.442212880715821
+          ],
+          [
+            4.0195307365366855,
+            0.7883361043534144,
+            6.696410934210397
+          ]
+        ],
+        "featureMaxCentres": [],
+        "featureMinCentres": [],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 0.875,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.19069957008690772,
+        "negative": 0.028965566098931382
+      },
+      "status": "ok",
+      "log_tail": " low disp src: minimum curve type?\nSVD transform reflection detected\nSVD transform reflection detected\n"
+    },
+    {
+      "fixture": "miscellanea/tetrahedron.scaled.stp",
+      "seed": 2,
+      "backend": "ocp",
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "numpy": "2.5.4",
+      "kernel": "8.0.1.1.0",
+      "transform": {
+        "insertionPoint": [
+          2,
+          3,
+          4
+        ],
+        "scale": 2,
+        "rotation": 25,
+        "rotationAxis": [
+          1,
+          2,
+          3
+        ]
+      },
+      "diagonal": 26.187342178945816,
+      "intersections": [
+        [
+          [
+            5.42663465561501,
+            4.062256743240654,
+            4.925191357016051
+          ]
+        ],
+        [
+          [
+            -0.47486461324040574,
+            9.187161533101015,
+            4.804330999303131
+          ]
+        ],
+        [
+          [
+            3.141828902901677,
+            4.712743354352512,
+            9.70914451450838
+          ]
+        ]
+      ],
+      "features": {
+        "featureMaxPoints": [
+          [
+            -4.598339871918949,
+            -3.8826728488887343,
+            1.7843502984129849
+          ],
+          [
+            9.99438114698878,
+            1.746346092679727,
+            -1.5049885304067099
+          ],
+          [
+            -1.8080774732499407,
+            11.849783573279927,
+            2.2583851021774106
+          ],
+          [
+            4.408834292067762,
+            2.2852271519127547,
+            13.461202916894193
+          ]
+        ],
+        "featureMinPoints": [
+          [
+            3.813347470030362,
+            5.149131243354014,
+            6.353045369266235
+          ],
+          [
+            0.5761192265260368,
+            4.317270102597234,
+            7.439192088152134
+          ],
+          [
+            4.0709919910065135,
+            0.7908061922737294,
+            6.6071366031948005
+          ]
+        ],
+        "featureMaxCentres": [],
+        "featureMinCentres": [],
+        "spherePoints": [],
+        "featureSphereDisps": []
+      },
+      "histograms": {
+        "positive": 0.875,
+        "negative": 0.0
+      },
+      "ranking": [
+        "positive",
+        "negative"
+      ],
+      "normalized_alignment_errors": {
+        "positive": 0.18024048333595316,
+        "negative": 0.027649647375227602
+      },
+      "status": "ok",
+      "log_tail": " low disp src: minimum curve type?\nSVD transform reflection detected\nSVD transform reflection detected\n"
+    }
+  ]
+}
