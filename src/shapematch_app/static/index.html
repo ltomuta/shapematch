@@ -13,7 +13,12 @@
       <h1>ShapeMatch</h1>
       <span>Local STEP library</span>
     </header>
+    <nav class="tabs" aria-label="Application sections">
+      <button id="search-tab" aria-current="page">Search</button>
+      <button id="settings-tab">Settings</button>
+    </nav>
     <main>
+      <div id="settings-panel" hidden>
       <section>
         <h2>Your library</h2>
         <div class="row">
@@ -35,18 +40,26 @@
           <pre id="errors"></pre>
         </details>
       </section>
-      <section>
+      </div>
+      <div id="search-panel" class="workspace">
+      <aside>
+      <section class="query-panel">
         <h2>Find similar parts</h2>
+        <button id="external">Browse for STEP file</button>
+        <div id="drop-zone" tabindex="0" role="button" aria-label="Drop a STEP file or press Enter to choose one">Drop a .step or .stp file here</div>
+        <input id="upload-file" type="file" accept=".step,.stp" hidden />
+        <div class="filename-picker">
         <label for="autocomplete">Search indexed filenames or paths</label>
         <div class="row">
           <input
             id="autocomplete"
             placeholder="Type a filename…"
             autocomplete="off"
-          /><button id="external">Browse for external STEP</button>
+          />
         </div>
-        <div id="suggestions"></div>
-        <button id="more-files" hidden>More files</button>
+        <div class="filename-options"><div id="suggestions"></div>
+        <button id="more-files" hidden>More files</button></div>
+        </div>
         <p>Selected query: <strong id="query">None</strong></p>
         <div class="row">
           <label
@@ -61,7 +74,7 @@
           ><button id="search">Search</button>
         </div>
       </section>
-      <section>
+      <section class="results-panel">
         <h2>Ranked results</h2>
         <p>
           Bidirectional surface RMS in millimeters, normalized deviation, and
@@ -81,10 +94,20 @@
           </table>
         </div>
       </section>
-      <section id="comparison" hidden>
+      </aside>
+      <section id="comparison">
         <h2>3D comparison</h2>
-        <p id="preview-status" role="status"></p>
-        <div class="row">
+        <div class="viewer-toolbar" aria-label="3D comparison options">
+        <div class="toolbar-group row">
+          <label>Display mode <select id="display-mode"><option value="overlay">Part overlay</option><option value="boolean">Boolean regions</option></select></label>
+          <label>Placement
+            <select id="placement">
+              <option value="aligned">Aligned</option>
+              <option value="original">Original STEP coordinates</option>
+            </select>
+          </label>
+        </div>
+        <div id="overlay-controls" class="toolbar-group row">
           <label
             ><input type="checkbox" id="source-visible" checked /> Query</label
           ><label
@@ -105,16 +128,32 @@
               min="0"
               max="100"
               value="45" /></label
-          ><label
-            >Placement
-            <select id="placement">
-              <option value="aligned">Aligned</option>
-              <option value="original">Original STEP coordinates</option>
-            </select></label
           >
+        </div>
+        <div id="boolean-controls" class="toolbar-group" hidden>
+          <div class="row">
+            <label><input id="common-visible" type="checkbox" checked /> Common <span id="common-volume"></span></label>
+            <label><input id="only_a-visible" type="checkbox" checked /> Only query <span id="only_a-volume"></span></label>
+            <label><input id="only_b-visible" type="checkbox" checked /> Only result <span id="only_b-volume"></span></label>
+          </div>
+          <div class="row">
+            <label>Common opacity <input id="common-opacity" type="range" min="0" max="100" value="25" /></label>
+            <label>Difference opacity <input id="difference-opacity" type="range" min="0" max="100" value="85" /></label>
+            <label>Boolean tolerance (mm) <select id="boolean-tolerance"><option>0</option><option>0.001</option><option>0.01</option><option>0.1</option></select></label>
+          </div>
+        </div>
+        </div>
+        <div class="viewer-status" aria-label="Viewer status">
+          <p id="preview-status" role="status">Select a query, search, then choose a result to compare in 3D.</p>
+          <p id="boolean-status" role="status" hidden></p>
         </div>
         <div id="viewer"></div>
       </section>
+      </div>
+      <div class="job-status">
+        <p id="search-progress" role="status" aria-live="polite"></p>
+        <button id="search-cancel" disabled>Cancel job</button>
+      </div>
       <p id="error" role="alert"></p>
     </main>
     <dialog id="picker">

@@ -11,19 +11,34 @@ From a checkout use `python -m pip install -e '.[app]'`. The command starts a
 loopback HTTP server on an automatically allocated port and opens your browser.
 If automatic opening fails, use the session URL printed in the terminal.
 Keep that terminal running; Ctrl+C stops the application. No Node, native GUI
-SDK, upload, hosted service, CDN, or Internet connection is needed at runtime.
+SDK, hosted service, CDN, or Internet connection is needed at runtime.
 Plotly JavaScript ships with the optional Python visualization dependency.
 
-Choose a library folder using directory navigation, breadcrumbs, the Windows
+Open **Settings** and choose a library folder using directory navigation, breadcrumbs, the Windows
 drive selector, or a direct directory path. Select **Use this folder**, then
 **Rescan**. Discovery accepts `.stp` and `.step` in any extension case, including
 nested folders and Unicode paths. Recursive discovery skips directory links,
 Windows junctions, and other redirecting directory reparse points.
 
-Type a filename or relative path and explicitly choose a query from the matches.
-Use **Browse for external STEP** to select a file outside the indexed library.
-The browser navigates files on the machine running ShapeMatch; it does not upload
-files. Library matches and filesystem listings are paginated. Switching library
+The **Search** tab places query selection and ranked results on the left and
+reserves the right side for the 3D comparison. On desktop the workspace fits the
+window, ranked results scroll independently, and job status and cancellation
+remain visible at the bottom. Viewer options are grouped in a toolbar with a
+separate viewer-status strip beneath it. Type a filename or relative path
+and choose a match to set the query; editing the text clears the previous query.
+Use **Browse for STEP file** to navigate files on the machine running ShapeMatch,
+or drop one `.step` or `.stp` file into the drop area (clicking it also opens a
+native file chooser). Dropped files are copied to the local application-data
+`uploads` directory, outside the indexed library; they never leave this computer.
+Uploads accept files up to 512 MB and remain available across app restarts.
+Choose a ranked result to open its 3D overlay. In **Display mode**, select
+**Boolean regions** to show common (green), only-query (blue), and only-result
+(orange) solids using the same CAD calculations as the offline HTML viewer.
+Each region has a visibility control and volume in mm³. Common and difference
+opacity, aligned/original placement, and Boolean tolerances of 0, 0.001, 0.01,
+and 0.1 mm are available. Boolean geometry is computed on demand when entering
+this mode; overlay previews remain quick. CAD failures are shown explicitly,
+and you can return to the overlay at any time. Library matches and filesystem listings are paginated. Switching library
 folders retains each folder's catalog and the active selection survives restart.
 
 Fast search uses the union of the top 100 radial-feature histograms and top 100

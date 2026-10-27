@@ -10,9 +10,12 @@ let selectedQuery = "",
   pickerMode = "folder",
   directory = "",
   fileOffset = 0,
+  fileSequence = 0,
   entryOffset = 0,
   navigationSequence = 0,
   preview = null,
+  previewContext = null,
+  booleanRequest = null,
   previewSequence = 0,
   lastJob = "",
   workersDirty = false,
@@ -39,11 +42,19 @@ function button(text, handler) {
   b.onclick = () => Promise.resolve().then(handler).catch(error);
   return b;
 }
-function selectQuery(path) {
+function selectQuery(path, label = path.split(/[\\/]/).pop()) {
+  fileSequence++;
   selectedQuery = path;
-  $("query").textContent = path;
+  $("query").textContent = label;
+  $("query").title = path;
+  $("autocomplete").value = label;
+  clearTimeout(autocompleteTimer);
+  $("suggestions").replaceChildren();
+  $("more-files").hidden = true;
+  $("error").textContent = "";
 }
 async function files(append = false) {
+  const sequence = ++fileSequence;
   if (!append) {
     fileOffset = 0;
     $("suggestions").replaceChildren();
@@ -52,13 +63,13 @@ async function files(append = false) {
   const data = await api(
     "files?" + new URLSearchParams({ text, offset: fileOffset }),
   );
-  if (text !== $("autocomplete").value) return;
+  if (sequence !== fileSequence || text !== $("autocomplete").value) return;
   for (const item of data.items) {
     const warnings = item.warnings || [];
     const b = button(item.relative + " · " + item.status + (warnings.length ? " · notes" : ""), () =>
-      selectQuery(item.path),
+      selectQuery(item.path, item.relative),
     );
-    b.disabled = item.status !== "ready";
+    b.disabled = false;
     b.title = [item.error, ...warnings].filter(Boolean).join("\n");
     $("suggestions").append(b);
   }
@@ -177,6 +188,7 @@ async function refresh() {
     for (const id of ["folder", "rescan", "search"])
       $(id).disabled = !!running || (!state.library && id !== "folder");
     $("cancel").disabled = !running;
+    $("search-cancel").disabled = !running;
     if (job) {
       $("progress").textContent =
         `${job.kind}: ${job.status} · ${job.completed}/${job.total} ${job.kind === "search" ? "checked / shortlisted" : ""}${job.eligible !== undefined ? " · " + job.eligible + " eligible" : ""}\n${job.coverage}`;
@@ -200,12 +212,13 @@ async function refresh() {
     }
     if (!job) {
       $("results").replaceChildren();
-      $("comparison").hidden = true;
+      $("preview-status").textContent = "Select a query, search, then choose a result to compare in 3D.";
       $("progress").textContent = "Ready to scan";
       $("errors").textContent = "";
       $("meter").value = 0;
       lastJob = "";
     }
+    $("search-progress").textContent = $("progress").textContent;
     document.body.dataset.ready = "true";
   } catch (e) {
     error(e);
@@ -216,7 +229,11 @@ async function refresh() {
 async function start(kind, body = {}) {
   await api("jobs/" + kind, body);
   if (kind === "search") {
-    $("comparison").hidden = true;
+    preview = null;
+    previewContext = null;
+    booleanRequest = null;
+    Plotly.purge($("viewer"));
+    $("preview-status").textContent = "Searching… Choose a result to compare in 3D.";
     $("results").replaceChildren();
     previewSequence++;
   }
@@ -225,6 +242,9 @@ async function start(kind, body = {}) {
 }
 async function showPreview(id, index, path) {
   const sequence = ++previewSequence;
+  preview = null;
+  booleanRequest = null;
+  previewContext = {id, index, path};
   $("comparison").hidden = false;
   $("preview-status").textContent = "Generating preview…";
   try {
@@ -260,14 +280,19 @@ function mesh(part, vertices, color, visible, opacity) {
   };
 }
 async function renderPreview() {
-  if (!preview) return;
+  const booleanMode = $("display-mode").value === "boolean";
+  $("overlay-controls").hidden = booleanMode;
+  $("boolean-controls").hidden = !booleanMode;
+  $("boolean-status").hidden = !booleanMode;
+  if (!preview) {
+    $("boolean-status").textContent = "Select a search result to show common and exclusive solids.";
+    return;
+  }
   const vertices =
     $("placement").value === "original"
       ? preview.source.original
       : preview.source.aligned;
-  await Plotly.react(
-    $("viewer"),
-    [
+  let traces = [
       mesh(
         preview.source,
         vertices,
@@ -282,7 +307,51 @@ async function renderPreview() {
         $("target-visible").checked,
         Number($("target-opacity").value) / 100,
       ),
-    ],
+    ];
+  if (booleanMode) {
+    if (!preview.boolean) {
+      $("boolean-status").textContent = "Computing common and exclusive solids…";
+      Plotly.purge($("viewer"));
+      if (!booleanRequest && previewContext) {
+        const context = previewContext, sequence = previewSequence;
+        const {id, index, path} = context;
+        booleanRequest = api(`jobs/${id}/preview/${index}?` + new URLSearchParams({path, include_booleans: true}))
+          .then(result => {
+            if (sequence !== previewSequence) return;
+            preview = result;
+            booleanRequest = null;
+            if (!preview.boolean) throw new Error("Boolean regions unavailable");
+            return renderPreview();
+          }).catch(e => {
+            if (sequence !== previewSequence) return;
+            booleanRequest = null;
+            $("boolean-status").textContent = "Boolean regions unavailable: " + e.message + ". Switch to Part overlay or select the mode again to retry.";
+          });
+      }
+      return;
+    }
+    const tolerance = Number($("boolean-tolerance").value);
+    const placements = tolerance === preview.boolean_tolerance ? preview.boolean :
+      preview.boolean_variants.find(level => level.tolerance === tolerance)?.placements;
+    const partition = placements?.[$("placement").value];
+    const keys = ["common", "only_a", "only_b"];
+    const names = ["Common", "Only query", "Only result"];
+    const colors = ["#809b87", "#149cbe", "#ed8530"];
+    traces = keys.map((key, index) => {
+      const region = partition?.regions[key] || {vertices: [], triangles: [], volume: 0};
+      $(key + "-volume").textContent = partition?.error ? "Unavailable" : `(${Number(region.volume).toPrecision(5)} mm³)`;
+      $(key + "-visible").disabled = !!partition?.error || !region.triangles.length;
+      return mesh({...region, name: names[index]}, region.vertices, colors[index],
+        !partition?.error && $(key + "-visible").checked,
+        Number($(index === 0 ? "common-opacity" : "difference-opacity").value) / 100);
+    });
+    $("boolean-status").textContent = !partition || partition.error
+      ? "Boolean regions unavailable: " + (partition?.error || "Missing tolerance data")
+      : traces.some(t => t.visible && t.i.length) ? "Common: green · Only query: blue · Only result: orange. Volumes in mm³."
+      : "No solid volume in the selected regions.";
+  }
+  await Plotly.react(
+    $("viewer"), traces,
     {
       margin: { l: 0, r: 0, t: 0, b: 0 },
       scene: {
@@ -319,6 +388,8 @@ $("more-entries").onclick = () => navigate(directory, true);
 $("more-files").onclick = () => files(true).catch(error);
 let autocompleteTimer;
 $("autocomplete").oninput = () => {
+  selectedQuery = "";
+  $("query").textContent = "None — choose a file below";
   clearTimeout(autocompleteTimer);
   autocompleteTimer = setTimeout(() => files().catch(error), 150);
 };
@@ -341,9 +412,56 @@ $("apply-workers").onclick = () => api("workers", { workers: Number($("workers")
   clearTimeout(timer);
   return refresh();
 }).catch(error);
-for (const id of ["source-visible", "target-visible", "placement"])
+for (const id of ["source-visible", "target-visible", "placement", "display-mode", "boolean-tolerance", "common-visible", "only_a-visible", "only_b-visible"])
   $(id).onchange = () => renderPreview().catch(error);
-for (const id of ["source-opacity", "target-opacity"])
+for (const id of ["source-opacity", "target-opacity", "common-opacity", "difference-opacity"])
   $(id).oninput = () => renderPreview().catch(error);
 refresh();
 files().catch(error);
+
+function switchTab(settings) {
+  $("settings-panel").hidden = !settings;
+  $("search-panel").hidden = settings;
+  for (const [id, active] of [["settings-tab", settings], ["search-tab", !settings]]) {
+    if (active) $(id).setAttribute("aria-current", "page");
+    else $(id).removeAttribute("aria-current");
+  }
+  if (!settings && preview) Plotly.Plots.resize($("viewer"));
+}
+$("settings-tab").onclick = () => switchTab(true);
+$("search-tab").onclick = () => switchTab(false);
+$("search-cancel").onclick = () => api("cancel", {}).catch(error);
+async function uploadQuery(file) {
+  if (!file || !/\.(step|stp)$/i.test(file.name)) throw new Error("Choose a .step or .stp file");
+  $("drop-zone").textContent = "Loading " + file.name + "…";
+  try {
+    const response = await fetch("/api/query-upload?" + new URLSearchParams({name: file.name}), {
+      method: "POST", headers: {"X-ShapeMatch-Session": token}, body: file,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || response.statusText);
+    selectQuery(data.path, file.name);
+  } finally { $("drop-zone").textContent = "Drop a .step or .stp file here"; }
+}
+$("drop-zone").onclick = () => $("upload-file").click();
+$("drop-zone").onkeydown = (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("upload-file").click(); }
+};
+$("upload-file").onchange = (e) => uploadQuery(e.target.files[0]).catch(error);
+$("drop-zone").ondragover = (e) => { e.preventDefault(); $("drop-zone").classList.add("dragging"); };
+$("drop-zone").ondragleave = () => $("drop-zone").classList.remove("dragging");
+$("drop-zone").ondrop = (e) => {
+  e.preventDefault();
+  $("drop-zone").classList.remove("dragging");
+  if (e.dataTransfer.files.length !== 1) return error(new Error("Drop one STEP file at a time"));
+  uploadQuery(e.dataTransfer.files[0]).catch(error);
+};
+
+// Plotly must follow the available canvas size when toolbars wrap or modes change.
+let viewerResizeFrame;
+new ResizeObserver(() => {
+  cancelAnimationFrame(viewerResizeFrame);
+  viewerResizeFrame = requestAnimationFrame(() => {
+    if ($("viewer").data && !$("search-panel").hidden) Plotly.Plots.resize($("viewer"));
+  });
+}).observe($("viewer"));

@@ -235,6 +235,9 @@ def test_search_coverage_ranking_query_exclusion_external_query(catalog):
     assert result["results"][0]["alignment_transform"]["scale"] == 1
     assert not next(data for op, data in worker.calls if op == "compare")["estimate_scale"]
     assert library.preview(result["id"], 0) == {"preview": True}
+    assert worker.calls[-1][1]["include_booleans"] is False
+    assert library.preview(result["id"], 0, include_booleans=True) == {"preview": True}
+    assert worker.calls[-1][1]["include_booleans"] is True
     external = root.parent / "external.step"
     external.write_text("different")
     result = finish(library, library.start("search", query=str(external), depth="fast"))
@@ -412,3 +415,24 @@ def test_best_twenty_results_and_search_cancellation(catalog):
     result = finish(library, job)
     assert result["status"] == "cancelled"
     assert result["completed"] < result["eligible"]
+
+
+def test_query_upload_is_private_and_validated(catalog):
+    from fastapi.testclient import TestClient
+    from shapematch_app.server import create_app
+    library, root, worker = catalog
+    with TestClient(create_app(library, token="upload", port=8123),
+                    base_url="http://127.0.0.1:8123") as client:
+        assert client.post("/api/query-upload?name=a.step", content=b"cad").status_code == 403
+        client.headers["X-ShapeMatch-Session"] = "upload"
+        assert client.post("/api/query-upload?name=a.txt", content=b"cad").status_code == 400
+        assert client.post("/api/query-upload?name=a.step", content=b"").status_code == 400
+        response = client.post("/api/query-upload", params={"name": "../../part.STEP"}, content=b"cad")
+        assert response.status_code == 200
+        path = Path(response.json()["path"])
+        assert path.parent == library.directory / "uploads"
+        assert path.read_bytes() == b"cad"
+        assert list(root.iterdir()) == []
+        job = finish(library, library.start("search", query=str(path)))
+        assert job["status"] == "completed"
+        assert list(path.parent.iterdir()) == [path]

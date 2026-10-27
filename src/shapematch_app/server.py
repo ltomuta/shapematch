@@ -128,6 +128,31 @@ def create_app(library=None, token=None, port=8000):
             raise ValueError("Library path is required")
         return library.select(data["path"])
 
+    @app.post("/api/query-upload")
+    async def upload_query(request: Request, name: str):
+        # Browsers do not expose dropped files' local paths. Keep a private copy
+        # outside the indexed library so uploads cannot overwrite library parts.
+        suffix = Path(name).suffix.lower()
+        if suffix not in EXTENSIONS:
+            raise ValueError("Choose a .step or .stp file")
+        directory = library.directory / "uploads"
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / (secrets.token_hex(16) + suffix)
+        size = 0
+        try:
+            with path.open("xb") as stream:
+                async for chunk in request.stream():
+                    size += len(chunk)
+                    if size > 512 * 1024 * 1024:
+                        raise ValueError("STEP uploads must be smaller than 512 MB")
+                    stream.write(chunk)
+            if not size:
+                raise ValueError("The STEP file is empty")
+        except BaseException:
+            path.unlink(missing_ok=True)
+            raise
+        return {"path": str(path)}
+
     @app.post("/api/jobs/scan")
     def scan():
         return library.start("scan")
@@ -148,8 +173,8 @@ def create_app(library=None, token=None, port=8000):
         return library.job(job_id)
 
     @app.get("/api/jobs/{job_id}/preview/{index}")
-    def preview(job_id: str, index: int, path: str | None = None):
-        return library.preview(job_id, index, path)
+    def preview(job_id: str, index: int, path: str | None = None, include_booleans: bool = False):
+        return library.preview(job_id, index, path, include_booleans)
 
     return app
 

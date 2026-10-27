@@ -57,7 +57,7 @@ def cad_operation(operation, data):
             result["timings"] = {"registration": time.perf_counter() - started}
         else:
             from shapematch_html import comparison_payload
-            result = comparison_payload(source, target, data["comparison"], include_booleans=False)
+            result = comparison_payload(source, target, data["comparison"], include_booleans=data.get("include_booleans", False))
             result["timings"] = {"preview": time.perf_counter() - started}
         return result
     raise ValueError(f"Unknown CAD operation: {operation}")

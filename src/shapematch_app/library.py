@@ -430,7 +430,7 @@ class Library:
                 self._error(job, row["path"], "No alignment found")
             self._save_job(job)
 
-    def preview(self, job_id, index, path=None):
+    def preview(self, job_id, index, path=None, include_booleans=False):
         job = self.job(job_id)
         if path is not None:
             index = next((i for i, r in enumerate(job["results"]) if r["path"] == path), -1)
@@ -441,7 +441,7 @@ class Library:
             if source_hash(item["path"]) != item["hash"]:
                 raise ValueError("Source changed; rescan and search again")
         result = self.supervisor.run("preview", {"query": query["path"], "query_cache": query["cache"],
-            "path": row["path"], "cache": row["cache"], "comparison": row})
+            "path": row["path"], "cache": row["cache"], "comparison": row, "include_booleans": include_booleans})
         for item in (query, row):
             if source_hash(item["path"]) != item["hash"]:
                 raise ValueError("Source changed during preview")
