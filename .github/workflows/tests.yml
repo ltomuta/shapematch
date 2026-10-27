@@ -13,10 +13,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: python -m pip install '.[test]' build
+      - run: python -m pip install '.[app,test]' build
       - run: python -m pytest -q
       - run: python -m build
       # Python expands the wheel path on both PowerShell and POSIX shells.
       - run: python -c "import glob, subprocess, sys; subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-deps', *glob.glob('dist/*.whl')])"
       - run: shapematch --help
       - run: python -m shapematch --help
+      - run: shapematch app --help
+      - run: python tools/app_smoke.py

@@ -170,3 +170,19 @@ def test_custom_tolerance_is_exported_and_invalid_cli_values_fail(overlay, tmp_p
             main(["visualize", str(tmp_path / "unused.json"), "--boolean-tolerance", value])
         assert result.value.code == 2
         assert "finite nonnegative" in capsys.readouterr().err
+
+
+def test_app_preview_worker_supports_boolean_regions(overlay, monkeypatch):
+    from shapematch_app.workers import cad_operation
+    import shapematch_cache
+    source, target, comparison = overlay
+    monkeypatch.setattr(shapematch_cache, "load_model",
+                        lambda cache, source_path: source if cache == "query" else target)
+    request = {"query_cache": "query", "query": "query.step", "cache": "target",
+               "path": "target.step", "comparison": comparison}
+    assert cad_operation("preview", request)["boolean"] is None
+    result = cad_operation("preview", {**request, "include_booleans": True})
+    for placement in ("aligned", "original"):
+        assert result["boolean"][placement]["error"] is None
+        assert set(result["boolean"][placement]["regions"]) == {"common", "only_a", "only_b"}
+    assert len(result["boolean_variants"]) == 3

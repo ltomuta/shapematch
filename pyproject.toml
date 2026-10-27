@@ -31,8 +31,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8,<10", "plotly>=6,<7"]
+test = ["pytest>=8,<10", "plotly>=6,<7", "fastapi>=0.115,<1", "httpx>=0.27,<1", "platformdirs>=4,<5"]
 html = ["plotly>=6,<7"]
+app = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "platformdirs>=4,<5", "plotly>=6,<7"]
 reference = ["dill>=0.3.8,<0.5"]
 
 [project.urls]
@@ -45,6 +46,13 @@ shapematch = "shapematch:main"
 [tool.setuptools]
 package-dir = {"" = "src"}
 py-modules = ["shapematch", "shapematch_geometry", "shapematch_alignment", "shapematch_cache", "shapematch_workflows", "shapematch_html", "shapematch_boolean"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["shapematch_app*"]
+
+[tool.setuptools.package-data]
+shapematch_app = ["static/*.html", "static/*.css", "static/*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

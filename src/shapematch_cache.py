@@ -117,7 +117,12 @@ def save_model(model, path):
     return write_json(path, data)
 
 
-def load_model(path, load_geometry=True):
+def load_model(path, load_geometry=True, source_path=None):
+    """Load features, optionally rebinding to a byte-identical source copy.
+
+    The override still verifies the stored SHA-256 before geometry is imported.
+    This lets a shared app cache outlive its originally referenced STEP path.
+    """
     from shapematch import STEPmodel
     path = Path(path).resolve()
     if path.suffix.lower() == ".obj":
@@ -126,7 +131,8 @@ def load_model(path, load_geometry=True):
         data = json.loads(path.read_text(encoding="utf-8"))
         if data["format"] != FORMAT or data["version"] != VERSION:
             raise CacheError("Unsupported feature cache format/version; regenerate from STEP")
-        source = resolve_stored_path(path.parent, data["source"]["path"])
+        source = (Path(source_path).resolve() if source_path is not None else
+                  resolve_stored_path(path.parent, data["source"]["path"]))
         if not source.is_file():
             raise CacheError(f"Cache STEP source is missing: {source}")
         if source_hash(source) != data["source"]["sha256"]:
