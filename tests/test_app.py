@@ -43,6 +43,36 @@ def finish(library, job):
     return library.job(job["id"])
 
 
+@pytest.mark.parametrize("interrupted", [False, True])
+def test_launch_shutdown_closes_library_and_socket(monkeypatch, capsys, interrupted):
+    from shapematch_app import server
+    from types import SimpleNamespace
+
+    uvicorn = pytest.importorskip("uvicorn")
+    closed = []
+    listeners = []
+    monkeypatch.setattr(server, "Library", lambda *args, **kwargs:
+                        SimpleNamespace(close=lambda: closed.append(True)))
+    monkeypatch.setattr(server, "create_app", lambda *args: object())
+
+    def run(self, sockets):
+        listeners.extend(sockets)
+        assert sockets[0].fileno() != -1
+        if interrupted:
+            # Match asyncio's chained exception when SIGINT cancels the task.
+            from asyncio import CancelledError
+            try:
+                raise CancelledError()
+            except CancelledError:
+                raise KeyboardInterrupt()
+
+    monkeypatch.setattr(uvicorn.Server, "run", run)
+    assert server.launch(open_browser=False) == 0
+    assert closed == [True]
+    assert listeners[0].fileno() == -1
+    assert capsys.readouterr().err == ""
+
+
 @pytest.fixture
 def catalog(tmp_path):
     root = tmp_path / "parts ü"

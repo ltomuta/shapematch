@@ -183,6 +183,10 @@ def launch(port=0, workers=2, timeout=300, open_browser=True, data_dir=None):
                 threading.Thread(target=browse_when_ready, daemon=True).start()
             try:
                 server.run(sockets=[listener])
+            except KeyboardInterrupt:
+                # Uvicorn may re-raise SIGINT after its graceful shutdown and
+                # asyncio cleanup. Treat the user's Ctrl+C as a normal exit.
+                pass
             finally:
                 library.close()
         return 0
