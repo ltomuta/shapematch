@@ -102,6 +102,10 @@ DesernoSphereCache = {}
 TammesSphereCache = {}
 
 
+class _FeatureSearchLimit(RuntimeError):
+    """A scan may retain partial features and still use exact CAD registration."""
+
+
 class STEPmodel(object):
     """Model features backed by standalone Open CASCADE geometry"""
 
@@ -121,6 +125,11 @@ class STEPmodel(object):
         self.featureMaxPoints = []
         self.featureMinPoints = []  # arrange as a list of lists representing points
         self.surfacePoints = []
+        self._surface_point_index = set()
+        self._surface_point_source = self.surfacePoints
+        self._surface_point_count = 0
+        self.featureWarnings = []
+        self._feature_deadline = None
         self.centroid = None
         self.rotSymRidgePoints = []
         self.rotSymGroovePoints = []
@@ -162,10 +171,19 @@ class STEPmodel(object):
         self.name = os.path.basename(self.filepath)
 
     def _intersections(self, V1, V2, forward):
+        if self._feature_deadline is not None and time.perf_counter() >= self._feature_deadline:
+            raise _FeatureSearchLimit()
         points = [Point(*p) for p in self.objectHandle.intersections(V1, V2, forward)]
+        # Cache loading and centroid corrections may replace the public list.
+        # Preserve its order while avoiding quadratic membership tests per ray.
+        if self._surface_point_source is not self.surfacePoints or self._surface_point_count != len(self.surfacePoints):
+            self._surface_point_index = set(self.surfacePoints)
+            self._surface_point_source = self.surfacePoints
         for point in points:
-            if point not in self.surfacePoints:
+            if point not in self._surface_point_index:
                 self.surfacePoints.append(point)
+                self._surface_point_index.add(point)
+        self._surface_point_count = len(self.surfacePoints)
         return points
 
     def rayModelIntersection(self, V1, V2):
@@ -1091,7 +1109,7 @@ def rotSymTest6(
         )  # anticlockwise rotation
         # centreVectors must be rotated about an axis orthogonal defined by localCentroid, rotationPoint
         minStep = rotSymSpacingAngle * np.sin(minAngle)
-        while not fullIntersection:  # rotate midVectors pi/2
+        for _ in range(32):  # at most 32 halvings before rejecting a tangent seed
             newCentrePoints = []
             for fv in flankingVectors:
                 newCentrePoint = proj2object2(
@@ -1109,82 +1127,19 @@ def rotSymTest6(
 
             if len(newCentrePoints) == 2:
                 fullIntersection = True
+                break
             else:
                 flankingVectors[0] = medianPoint([flankingVectors[0], rotationPoint])
                 flankingVectors[1] = medianPoint([flankingVectors[1], rotationPoint])
                 if scene:
                     displayPointFC(newCentrePoints, "red", scene, "star7")
 
-        newCentreDisps = localDisp(newCentrePoints, lCentroid)
-        dc_0 = newCentreDisps[0]
-        dc_1 = newCentreDisps[1]
-        cp_0 = newCentrePoints[0]
-        cp_1 = newCentrePoints[1]
-        cp_m = medianPoint(
-            [cp_0, cp_1]
-        )  # ------------------------------------------------ fallthru issue
-        dc_m = localDisp(cp_m, lCentroid)
+        if not fullIntersection:
+            return None, None
 
-        while abs(localDisp(cp_0, cp_1)) > minStep:
-            cv_m = medianPoint([cp_0, cp_1])
-            cp_m = proj2object2(ShapeInstance, cv_m, lCentroid, "nearest")  # , _scene)
-
-            if not cp_m:
-                print("point skipped on centrePoint search")
-                return None, None
-
-            else:
-                # if _scene:
-                #     displayPointFC(cp_m, 'lime', _scene)
-
-                dc_m = localDisp(cp_m, lCentroid)
-
-                if featureType == "localMax":
-                    if dc_0 < dc_1:
-                        if dc_0 < dc_m:
-                            cp_0 = cp_m
-                            dc_0 = dc_m
-                        elif dc_m < dc_0:
-                            # easiest to bail out
-                            return None, None
-                            # pass
-                    elif dc_1 < dc_0:
-                        if dc_1 < dc_m:
-                            cp_1 = cp_m
-                            dc_1 = dc_m
-                        elif dc_m < dc_1:
-                            return None, None
-                            # pass
-                    elif dc_0 == dc_1:  # rare circumstance causing loop
-                        centrePoint = cp_m
-                        dispCentre = dc_m
-                        return centrePoint, dispCentre
-
-                elif featureType == "localMin":
-                    if dc_1 < dc_0:
-                        if dc_m < dc_0:
-                            cp_0 = cp_m
-                            dc_0 = dc_m
-                        elif dc_0 < dc_m:
-                            return None, None
-                    if dc_0 < dc_1:
-                        if dc_m < dc_1:
-                            cp_1 = cp_m
-                            dc_1 = dc_m
-                        elif dc_1 < dc_m:
-                            return None, None
-                    if dc_0 == dc_1:  # rare circumstance causing loop
-                        centrePoint = cp_m
-                        dispCentre = dc_m
-                        return centrePoint, dispCentre
-
-        centrePoint = cp_m
-        dispCentre = dc_m
-
-        # if scene:
-        #     displayPointFC(cp_m, 'red', scene)
-
-        return centrePoint, dispCentre
+        return _refine_radial_bracket(
+            ShapeInstance, lCentroid, newCentrePoints, featureType, minStep
+        )
 
     # increase rotSymSpacingAngle... import from edge search?
     # linear spacing increase about centre point
@@ -1567,7 +1522,7 @@ def getMaxMin(
             #     restOfClusterPoints = [rocp for rocp in clusterPoints if rocp is not centrePoint]
             #     displayPointFC(restOfClusterPoints, 'lime', scene)
         else:
-            return None, "noCluster", featureIdentity
+            return None, "noCluster", None
 
         dispCluster = localDisp(clusterPoints, localCentroid)
         dispCentre = localDisp(centrePoint, localCentroid)
@@ -1794,16 +1749,50 @@ def getMaxMin(
     # return centrePoint, featureIdentity, circleCentrePoint
 
 
+def _refine_radial_bracket(model, centroid, points, feature_type, min_step):
+    """Refine a radial edge only while its two endpoints make progress.
+
+    Equal midpoint/end radii occur at trimmed surface edges. Strict improvement
+    used to leave both endpoints unchanged forever; reject such a seed instead
+    of returning an unrefined point as a circular feature. The finite cap also
+    bounds asymptotic or oscillating projections across disconnected faces.
+    """
+    ends = list(points)
+    disps = [localDisp(point, centroid) for point in ends]
+    midpoint = medianPoint(ends)
+    for _ in range(64):
+        gap = localDisp(*ends)
+        if gap <= min_step:
+            return midpoint, localDisp(midpoint, centroid)
+        midpoint = proj2object2(model, medianPoint(ends), centroid, "nearest")
+        if midpoint is None:
+            return None, None
+        displacement = localDisp(midpoint, centroid)
+        if disps[0] == disps[1]:
+            return midpoint, displacement
+        if feature_type == "localMax":
+            worst = 0 if disps[0] < disps[1] else 1
+            improvement = displacement > disps[worst]
+        else:
+            worst = 0 if disps[0] > disps[1] else 1
+            improvement = displacement < disps[worst]
+        if not improvement:
+            return None, None
+        ends[worst], disps[worst] = midpoint, displacement
+        if localDisp(*ends) >= gap:
+            return None, None
+    return None, None
+
+
 def centroidTranslation(ShapeInstance, giveUp=100, scene=None):
     """
     Initial surface detection and centroid translation estimation.
-    Starting from the Cartesian origin, emit rays until an interception is detected.
-    If no surface is
-    Relocate to median point of surface interceptions and repeat.
+    Starting near the geometry, emit rays until an intersection is detected.
+    Relocate to the bounding center of surface intersections and repeat.
 
     To identify a model centroid, the model must first be detected. As the methods available
     for model discovery are limited to point intersections with projected rays, an array of rays
-    is projected in all directions from the origin to intersect the model surface.
+    is projected in all directions from the CAD center of mass to intersect the model surface.
     The Deserno regular method is used. This method is sensitive to the density of
     projected vectors and the scale of the geometry model. Any surface intersections indicate
     the presence of a model, the centroid of this model may then be estimated.
@@ -1821,25 +1810,25 @@ def centroidTranslation(ShapeInstance, giveUp=100, scene=None):
     :return: ShapeInstance.centroid value
     """
 
-    # issues with unevenly distributed point intersections
-    # Set estimated centroid to Cartesian space origin.
-
-    centroid = Point(0.0, 0.0, 0.0)
-    centroidStopCondition = 0.075
+    # World-origin rays can miss an entire valid part placed far from (0,0,0).
+    # Mass center is only a search seed; retain the surface-derived centroid.
+    centroid = Point(*ShapeInstance.objectHandle.principal_frame()[1])
+    # Relative convergence follows model scale; retain a floor above CAD noise.
+    centroidStopCondition = max(ShapeInstance.objectHandle.tolerance * 10,
+                                ShapeInstance.objectHandle.diagonal * 1e-4)
     # centroidStopCondition = 0.025
     # Deserno Sphere or Tammes Sphere do not work well on long or thin
     resolution = 40
     rotn = 0.0
-    maxResolution = 80
-    giveUp = resolution * 3
+    maxResolution = max(resolution, int(giveUp))
     pointList = []
 
     # Using an equal divison of an encompassing sphere (Tammes sphere),
     # emit rays from estimated centroid and test for intersections with object surfaces
 
     DS = None
-    while (resolution < giveUp) and not pointList:
-        DS = DesernoSphere(resolution)
+    while (resolution <= maxResolution) and not pointList:
+        DS = offsetPoints(DesernoSphere(resolution), centroid)
         # DS = TammesSphere(resolution)
 
         # if intersections do not exist, repeat with higher density of rays until giveUp
@@ -1854,12 +1843,20 @@ def centroidTranslation(ShapeInstance, giveUp=100, scene=None):
     # in cases of complex objects, e.g. toroids, repeat centroid search until
     # movement between updated is a fraction of initial displacement.
     # if intersections exist, update estimated centroid to mean value of intersections
+    if not pointList:
+        # For sparse disconnected bodies, even mass-center rays can all miss.
+        # An exact closest boundary point provides a deterministic detection seed.
+        points, _ = ShapeInstance.objectHandle.closest_points([centroid])
+        ShapeInstance.surfacePoints.append(Point(*points[0]))
+        pointList = [Point(*points[0])]
     if pointList:
         centroid = medianPoint(ShapeInstance.surfacePoints)
-        DS = offsetPoints(DS, centroid)
+        DS = offsetPoints(DesernoSphere(resolution), centroid)
         # firstCentroidDisp = localDisp(centroid, Point(0.0,0.0,0.0))
-        centroidDisp = 1.0  # firstCentroidDisp
-        while centroidDisp > centroidStopCondition:
+        centroidDisp = float("inf")  # always perform at least one refinement
+        for _ in range(max(1, int(giveUp))):
+            if centroidDisp <= centroidStopCondition:
+                break
             # repeat TammesSphere/DesernoSphere projection distribution calculation to get reasonable centroid
 
             # distributedPoints = []
@@ -1898,6 +1895,8 @@ def centroidTranslation(ShapeInstance, giveUp=100, scene=None):
 
             if scene:
                 displayPointFC(centroid, "lime", scene)
+        else:
+            ShapeInstance.featureWarnings.append("Surface centroid iteration limit reached")
 
         medianCentroid = medianPoint(ShapeInstance.surfacePoints)
         printVerbose(
@@ -2551,10 +2550,17 @@ def searchFeatures(
     # if scene:
     #     displayPointFS(DS, 65280, scene)  # green
 
-    while inadequateResolution or inadequateFeatures:
+    # Normal max/min searches need only a few passes (resolution 35..55).
+    # A fixed budget prevents feature-less seeds revisiting the same search.
+    for _ in range(16):
+        if not (inadequateResolution or inadequateFeatures):
+            break
         if not seedPoints:  # not case of centroid updates
             # get distributed points
             seedPoints = randomDistIntersects(ShapeInstance, resolution, featureType)
+            if not seedPoints:
+                ShapeInstance.featureWarnings.append("No radial feature seeds; using CAD registration candidates")
+                break
 
             # if scene:
             #     scene.addPoints(seedPoints, 'grey')
@@ -2680,7 +2686,8 @@ def searchFeatures(
                     inadequateResolution = True
 
             # if len(circleCluster) == len(featureCluster): localCentroid = meanPoint(circleCluster + featureCluster)
-            localCentroid = medianPoint(featureCluster)
+            if featureCluster:
+                localCentroid = medianPoint(featureCluster)
 
             # pointCentroid = meanPoint(ShapeInstance.surfacePoints)
             # print('mean surface point - mean feature point centroid: ' + str(localDisp(localCentroid, pointCentroid)))
@@ -2813,6 +2820,8 @@ def searchFeatures(
             inadequateFeatures = False  # stop looking for sufficient feature points
             if inadequateResolution:
                 resolution += 5
+    else:
+        ShapeInstance.featureWarnings.append("Radial feature search iteration limit reached; using partial features and CAD registration")
 
     # localCentroid = meanPoint(circleCluster)
     ShapeInstance.centroid = localCentroid
@@ -3948,6 +3957,7 @@ def getModelFeatures2(
     rotationAxis,
     scene=None,
     timings=None,
+    feature_timeout=None,
 ):
     """
     Import a CAD STEP model file from given file path into CAD model space, also viewing scene space
@@ -3960,6 +3970,8 @@ def getModelFeatures2(
     :param rotationDegrees: initial rotation of model within CAD space in degrees
     :param rotationAxis: defined rotation axis
     :param scene: coin3d pivy graphical display instance, point display for debug purposes
+    :param feature_timeout: optional scan budget in seconds for radial feature search;
+        retains partial features and CAD registration candidates when exceeded
     :return: CAD model object
     """
     # initiate CAD model from file path
@@ -4003,17 +4015,28 @@ def getModelFeatures2(
         ElapsedTime = time.process_time()
         # get the initial feature points and cluster from the Tammes sphere seed points
 
-        searchFeatures(
-            STEPtestModel,
-            [],
-            DA / 2,
-            (cosClusterResolution * stopCondition),
-            resolution,
-            0.001,
-            10,
-            0.9,
-            scene,
-        )  # 0.001,  # ------------------stopCondition=SCALE-DEPENDENT?
+        if feature_timeout is not None:
+            if not math.isfinite(feature_timeout) or feature_timeout <= 0:
+                raise ValueError("Feature timeout must be finite and positive")
+            STEPtestModel._feature_deadline = time.perf_counter() + feature_timeout
+        try:
+            searchFeatures(
+                STEPtestModel,
+                [],
+                DA / 2,
+                (cosClusterResolution * stopCondition),
+                resolution,
+                0.001,
+                10,
+                0.9,
+                scene,
+            )
+        except _FeatureSearchLimit:
+            STEPtestModel.featureWarnings.append(
+                f"Feature search reached its {feature_timeout:g}s budget; using partial features and CAD registration"
+            )
+        finally:
+            STEPtestModel._feature_deadline = None
 
         # genTiming = (time.clock() - ElapsedTime)
         genTiming = time.process_time() - ElapsedTime

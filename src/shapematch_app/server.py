@@ -50,6 +50,7 @@ def create_app(library=None, token=None, port=8000):
 
     @asynccontextmanager
     async def lifespan(app):
+        library.rescan_if_outdated()
         yield
         library.close()
 

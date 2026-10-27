@@ -64,6 +64,72 @@ def test_invalid_geometry_and_inputs(cube_path, tmp_path):
     model.importSTEPmodel(cube_path)
     with pytest.raises(GeometryError, match="nonzero"):
         model.rayModelIntersection2(Point(0, 0, 0), Point(0, 0, 0))
+
+
+def test_mixed_solid_and_open_shell_excludes_only_surfaces():
+    from OCP.BRep import BRep_Builder
+    from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox
+    from OCP.TopoDS import TopoDS_Compound, TopoDS_Shell
+    builder = BRep_Builder()
+    mixed, surface = TopoDS_Compound(), TopoDS_Shell()
+    builder.MakeCompound(mixed)
+    builder.MakeShell(surface)
+    face = BRepBuilderAPI_MakeFace(gp_Pln(gp_Pnt(100, 0, 0), gp_Dir(1, 0, 0)), -2, 2, -2, 2).Face()
+    builder.Add(surface, face)
+    builder.Add(mixed, BRepPrimAPI_MakeBox(1, 2, 3).Solid())
+    builder.Add(mixed, surface)
+    geometry = Geometry(mixed)
+    assert geometry.principal_frame()[0] == pytest.approx(6)
+    assert geometry.diagonal == pytest.approx(math.sqrt(14))
+    np.testing.assert_allclose(geometry.intersections((-1, 1, 1), (0, 1, 1)), [(0, 1, 1), (1, 1, 1)])
+    assert "Ignored 1 open surface" in geometry.import_warnings[0]
+    with pytest.raises(GeometryError, match="closed shell"):
+        Geometry(surface)
+
+
+def test_standalone_closed_shell_becomes_oriented_solid():
+    from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox
+    from OCP.TopAbs import TopAbs_SHELL
+    from OCP.TopExp import TopExp_Explorer
+    shell = TopExp_Explorer(BRepPrimAPI_MakeBox(1, 2, 3).Solid(), TopAbs_SHELL).Current()
+    geometry = Geometry(shell.Reversed())
+    assert geometry.principal_frame()[0] == pytest.approx(6)
+    np.testing.assert_allclose(geometry.principal_frame()[1], [.5, 1, 1.5])
+
+
+def test_analytic_intersection_fallback_preserves_hole_trimming(monkeypatch):
+    import shapematch_geometry as adapter
+    from OCP.BRepAlgoAPI import BRepAlgoAPI_Cut
+    from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox, BRepPrimAPI_MakeCylinder
+    from OCP.gp import gp_Ax2
+    from OCP.Standard import Standard_NullObject
+    box = BRepPrimAPI_MakeBox(gp_Pnt(-1, -1, -1), 2, 2, 2).Shape()
+    hole = BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(0, 0, -2), gp_Dir(0, 0, 1)), .25, 4).Shape()
+    geometry = Geometry(BRepAlgoAPI_Cut(box, hole).Shape())
+
+    class FailingIntersector:
+        def Load(self, *args):
+            pass
+
+        def Perform(self, *args):
+            raise Standard_NullObject("forced analytic fallback")
+
+    geometry._intersector = FailingIntersector()
+    monkeypatch.setattr(adapter, "IntCurvesFace_ShapeIntersector", FailingIntersector)
+    # Untrimmed plane intersections would incorrectly close the axial hole.
+    assert geometry.intersections((0, 0, -3), (0, 0, -2)) == []
+    np.testing.assert_allclose(geometry.intersections((0, 0, 0), (1, 0, 0), False),
+                               [(-1, 0, 0), (-.25, 0, 0), (.25, 0, 0), (1, 0, 0)], atol=1e-7)
+    np.testing.assert_allclose(geometry.intersections((0, 0, 0), (1, 0, 0)), [(.25, 0, 0), (1, 0, 0)], atol=1e-7)
+
+
+def test_surface_point_deduplication_survives_cache_list_replacement(cube_path):
+    model = STEPmodel()
+    model.importSTEPmodel(cube_path)
+    model.rayModelIntersection2(Point(0, 0, 0), Point(1, 0, 0))
+    model.surfacePoints = [Point(.5, 0, 0), Point(-.5, 0, 0)]
+    model.rayModelIntersection2(Point(0, 0, 0), Point(1, 0, 0))
+    assert model.surfacePoints == [Point(.5, 0, 0), Point(-.5, 0, 0)]
     with pytest.raises(GeometryError, match="finite"):
         model.rayModelIntersection2(Point(0, 0, 0), Point(math.inf, 0, 0))
 

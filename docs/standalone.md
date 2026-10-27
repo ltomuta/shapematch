@@ -35,7 +35,7 @@ unchanged. No old cache deserialization or conversion is performed.
 - Scale, rotation, and translation are applied in that order. Positive scales
   below one now work. Reloading a model preserves explicit zero/default transform
   values rather than confusing them with omitted arguments. Invalid transforms,
-  zero-length rays, invalid models, and open shells produce errors.
+  zero-length rays, invalid models, and surface-only open shells produce errors.
 - Removed NumPy APIs use their supported equivalents (`inf`, floating `asarray`,
   and supported array operations). The corrected alignment solver uses explicit
   array matrix products.
@@ -51,6 +51,38 @@ unchanged. No old cache deserialization or conversion is performed.
   Workflows copy feature data before pairwise centroid correction and preserve
   zero alignment errors. Model selection is sorted, seeded, and capped at 20
   candidates; batch comparison evaluates every ordered pair.
+
+### Scan algorithm corrections
+
+Centroid discovery starts from CAD mass properties rather than requiring a part
+to intersect a sparse set of rays from the world origin. The seed is refined
+using the existing surface bounding-center calculation, with a scale-relative
+convergence threshold. Feature counts and centroids may intentionally differ
+from older caches. The missing-cluster return value no longer places feature
+labels in coordinate fields. Midpoint refinement rejects nonprogressing brackets;
+tangent and outer feature searches have finite iteration limits. Surface-point
+deduplication uses a hash index while retaining the public list's ordering.
+
+App radial-feature extraction also has a soft time budget. When it expires, the
+validated CAD geometry and any completed features remain available to the
+existing geometry-based registration path; the file receives a note. Ordinary
+CLI extraction remains unbudgeted. These are algorithm/workflow corrections,
+not changes to the SVD transform or bidirectional surface-error definition.
+
+### CAD import corrections
+
+Mixed solid/surface exports retain closed bodies and explicitly report excluded
+ancillary open shells and loose faces. Standalone closed shells become validated,
+oriented solids. Invalid topology is still rejected without automatic healing.
+Ray limits are derived from the complete selected-body bounding box. Native
+intersection failures on analytic faces use exact support-surface intersections
+classified against bounded faces, preserving trims and holes. Native-coordinate
+imports avoid an unnecessary geometry copy and repeated topology validation.
+
+The local app extractor identity is now `native-features-1-2`. On launch, an old
+selected catalog automatically rescans all entries, including previous failures;
+successful old descriptors are regenerated too. The data-only cache schema
+remains version 1. See [Local STEP library](local-app.md) for scan notes and limits.
 
 ## Reproducing validation
 

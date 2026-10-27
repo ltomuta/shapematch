@@ -76,6 +76,11 @@ completed caches and results, and stops scheduling new work.
 
 Every manual rescan hashes every discovered STEP file. Content and explicit
 extraction-version matches reuse deterministic native-coordinate features.
+When the selected library was indexed with an older extractor, the next app
+launch automatically starts a rescan. It retries failed files and refreshes old
+successful descriptors together; this one-time refresh can take as long as a
+new scan. Later launches reuse the corrected caches. Other libraries are
+refreshed when explicitly rescanned.
 Byte-identical entries share a feature cache, but keep independent source paths;
 a duplicate remains usable if the cache's original source is deleted. Source
 hashes are checked again before newly computed features, comparisons or previews
@@ -84,6 +89,24 @@ parents, including verified missing subtrees; inaccessible directories retain
 previous entries and report errors. Searching retained entries still verifies
 the source hash. Interrupted jobs are marked on restart and can be retried with
 a rescan or new search. Cache garbage collection is not automatic.
+
+Mixed solid/surface exports are matched using their closed bodies. Standalone
+closed shells are converted to oriented solids; ancillary open shells and loose
+faces are excluded. Surface-only files still require an enclosed body. Files
+with import or limited-feature notes show **notes** in the file list; hover over
+the entry for details. Invalid topology is reported rather than silently healed.
+
+Centroid detection starts at the CAD center of mass and refines using surface
+intersections. Local feature searches have finite iteration and progress limits.
+If a feature search reaches its limit, partial radial features and the existing
+CAD principal-frame registration candidates remain available, with a note on the
+file. App scans also give radial feature search up to 60 seconds (or half the
+configured worker timeout, if shorter), then keep available features and the CAD
+descriptor instead of failing an otherwise usable model. Feature counts in these
+limited scans can depend on runtime speed; command-line extraction has no such
+time budget. A single blocked CAD call is still subject to the hard worker timeout.
+Surface intersections use an exact, trim-aware analytic fallback when the
+CAD kernel fails on a supported analytic face.
 
 The service binds only `127.0.0.1`. API calls require a fresh per-launch session
 token, and Host and browser Origin headers are validated. The token travels in

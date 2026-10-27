@@ -15,7 +15,8 @@ import uuid
 from shapematch_cache import VERSION, source_hash
 from .workers import Supervisor
 
-EXTRACTION_VERSION = f"native-features-{VERSION}-1"
+# Algorithm/import changes must invalidate both successful and failed catalogs.
+EXTRACTION_VERSION = f"native-features-{VERSION}-2"
 EXTENSIONS = {".stp", ".step"}
 
 
@@ -142,8 +143,34 @@ class Library:
         with self.connect() as db:
             params = (self.active, text.lower())
             total = db.execute("SELECT count(*) FROM files WHERE library=? AND instr(lower(relative),?)>0", params).fetchone()[0]
-            rows = db.execute("SELECT path,relative,status,error FROM files WHERE library=? AND instr(lower(relative),?)>0 ORDER BY relative LIMIT ? OFFSET ?", (*params, limit, offset)).fetchall()
-        return {"total": total, "offset": offset, "items": [dict(r) for r in rows]}
+            rows = db.execute("SELECT path,relative,status,error,descriptor FROM files WHERE library=? AND instr(lower(relative),?)>0 ORDER BY relative LIMIT ? OFFSET ?", (*params, limit, offset)).fetchall()
+        items = []
+        for row in rows:
+            item = dict(row)
+            descriptor = json.loads(item.pop("descriptor") or "{}")
+            item["warnings"] = descriptor.get("warnings", [])
+            items.append(item)
+        return {"total": total, "offset": offset, "items": items}
+
+    def rescan_if_outdated(self):
+        """Refresh the selected catalog once on launch after extractor changes.
+
+        Retry failures as well as successes; mixing old/new descriptors would
+        make the fast-search ranking inconsistent. Unselected libraries refresh
+        when explicitly rescanned, without modifying their existing records.
+        """
+        with self.lock:
+            if self.thread and self.thread.is_alive():
+                return None
+            root = self.active
+            if not root or not Path(root).is_dir():
+                return None
+            with self.connect() as db:
+                stale = db.execute("SELECT 1 FROM files WHERE library=? AND (version IS NULL OR version!=?) LIMIT 1",
+                                   (root, EXTRACTION_VERSION)).fetchone()
+            if stale:
+                return self.start("scan")
+        return None
 
     def state(self):
         active = self.active

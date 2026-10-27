@@ -17,7 +17,8 @@ def cad_operation(operation, data):
         random.seed(0)
         np.random.seed(0)
         timings = {}
-        model = sm.getModelFeatures2(data["path"], sm.Point(0, 0, 0), 1, 0, [0, 0, 1], timings=timings)
+        model = sm.getModelFeatures2(data["path"], sm.Point(0, 0, 0), 1, 0, [0, 0, 1], timings=timings,
+                                     feature_timeout=data.get("feature_timeout", 60))
         if model is None:
             raise ValueError("No usable surface features")
         if source_hash(data["path"]) != data["hash"]:
@@ -44,6 +45,7 @@ def cad_operation(operation, data):
         summary = [area / volume ** (2/3), *list(moments[:2] / moments[-1])]
         save_model(model, data["cache"])
         return {"summary": summary, "histogram": histogram, "volume": volume,
+                "warnings": geometry.import_warnings + model.featureWarnings,
                 "area": area, "diagonal": geometry.diagonal, "timings": timings}
     if operation in ("compare", "preview"):
         source = load_model(data["query_cache"], source_path=data["query"])
@@ -102,6 +104,10 @@ class Supervisor:
                     for item in self.active.values()]
 
     def run(self, operation, data, cancel=None):
+        if operation == "extract":
+            # Leave room for STEP loading, summary computation and serialization.
+            # The hard process timeout still protects a single stalled CAD call.
+            data = {**data, "feature_timeout": min(60, self.timeout / 2)}
         cancel = cancel or threading.Event()
         ticket = object()
         with self.condition:

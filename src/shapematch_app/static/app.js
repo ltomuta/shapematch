@@ -54,10 +54,12 @@ async function files(append = false) {
   );
   if (text !== $("autocomplete").value) return;
   for (const item of data.items) {
-    const b = button(item.relative + " · " + item.status, () =>
+    const warnings = item.warnings || [];
+    const b = button(item.relative + " · " + item.status + (warnings.length ? " · notes" : ""), () =>
       selectQuery(item.path),
     );
     b.disabled = item.status !== "ready";
+    b.title = [item.error, ...warnings].filter(Boolean).join("\n");
     $("suggestions").append(b);
   }
   fileOffset += data.items.length;

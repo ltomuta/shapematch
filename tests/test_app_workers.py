@@ -29,6 +29,24 @@ def test_worker_configuration_and_active_progress(monkeypatch):
     assert active[0]["elapsed"] >= 2
 
 
+def test_budget_limited_features_remain_cacheable_and_match_geometry(tmp_path, cube_path):
+    from shapematch_cache import load_model
+    from shapematch_workflows import compare
+    cache = tmp_path / "partial.json"
+    descriptor = workers.cad_operation("extract", {
+        "path": str(cube_path), "hash": source_hash(cube_path), "cache": str(cache),
+        # Expire at the first radial-search checkpoint, without a timing-sensitive
+        # sleep or a costly fixture. The CAD body is still completely validated.
+        "feature_timeout": 1e-12,
+    })
+    model = load_model(cache)
+    assert descriptor["volume"] == pytest.approx(1)
+    assert any("budget" in note for note in descriptor["warnings"])
+    assert model._feature_deadline is None
+    assert not model.featureMaxPoints
+    assert compare(model, model, 0)["normalized_alignment_error"] < 1e-6
+
+
 def controlled_entry(connection, operation, data):
     if operation == "crash":
         os._exit(7)

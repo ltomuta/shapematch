@@ -1,24 +1,28 @@
 """Headless Open CASCADE geometry boundary. Coordinates use STEP reader units (mm)."""
 import math
 from pathlib import Path
-import sys
 
 from OCP.Bnd import Bnd_Box
 from OCP.BRep import BRep_Tool, BRep_Builder
 from OCP.BRepAdaptor import BRepAdaptor_Surface
 from OCP.BRepBndLib import BRepBndLib
-from OCP.BRepBuilderAPI import BRepBuilderAPI_Transform, BRepBuilderAPI_MakeVertex
+from OCP.BRepBuilderAPI import BRepBuilderAPI_Transform, BRepBuilderAPI_MakeVertex, BRepBuilderAPI_MakeSolid
+from OCP.BRepLib import BRepLib
+from OCP.BRepClass import BRepClass_FaceClassifier
 from OCP.BRepExtrema import BRepExtrema_DistShapeShape
 from OCP.BRepGProp import BRepGProp
 from OCP.BRepMesh import BRepMesh_IncrementalMesh
 from OCP.GProp import GProp_GProps
-from OCP.GeomAbs import GeomAbs_Plane
+from OCP.GeomAbs import GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Cone, GeomAbs_Sphere, GeomAbs_Torus
+from OCP.Geom import Geom_Line
+from OCP.GeomAPI import GeomAPI_IntCS
 from OCP.BRepCheck import BRepCheck_Analyzer
 from OCP.gp import gp_Dir, gp_Lin, gp_Pnt, gp_Trsf
 from OCP.IFSelect import IFSelect_RetDone
 from OCP.IntCurvesFace import IntCurvesFace_ShapeIntersector
 from OCP.STEPControl import STEPControl_Reader
-from OCP.TopAbs import TopAbs_SHELL, TopAbs_FACE, TopAbs_REVERSED
+from OCP.TopAbs import TopAbs_SOLID, TopAbs_SHELL, TopAbs_FACE, TopAbs_REVERSED, TopAbs_IN, TopAbs_ON
+from OCP.Standard import Standard_NullObject
 from OCP.TopExp import TopExp_Explorer
 from OCP.TopLoc import TopLoc_Location
 from OCP.TopoDS import TopoDS, TopoDS_Compound
@@ -30,25 +34,58 @@ class GeometryError(ValueError):
 
 class Geometry:
     def __init__(self, shape):
-        self.shape = shape
         if shape.IsNull() or not BRepCheck_Analyzer(shape).IsValid():
             raise GeometryError("STEP model is empty or has invalid geometry")
-        shells = TopExp_Explorer(shape, TopAbs_SHELL)
-        count = 0
+        self.import_warnings = []
+        # STEP exports may carry cosmetic surfaces alongside actual bodies.
+        # Keep solids intact (including cavity shells); only standalone closed
+        # shells may be promoted to solids. Open surfaces never define volume.
+        builder = BRep_Builder()
+        bodies = TopoDS_Compound()
+        builder.MakeCompound(bodies)
+        solids = TopExp_Explorer(shape, TopAbs_SOLID)
+        count, excluded = 0, 0
+        while solids.More():
+            solid = solids.Current()
+            shells = TopExp_Explorer(solid, TopAbs_SHELL)
+            while shells.More():
+                if not BRep_Tool.IsClosed_s(shells.Current()):
+                    raise GeometryError("STEP solid contains an open shell")
+                shells.Next()
+            builder.Add(bodies, solid)
+            count += 1
+            solids.Next()
+        shells = TopExp_Explorer(shape, TopAbs_SHELL, TopAbs_SOLID)
         while shells.More():
             if not BRep_Tool.IsClosed_s(shells.Current()):
-                raise GeometryError("STEP model contains an open shell")
-            count += 1
+                excluded += 1
+            else:
+                solid = BRepBuilderAPI_MakeSolid(TopoDS.Shell(shells.Current())).Solid()
+                if not BRepLib.OrientClosedSolid_s(solid) or not BRepCheck_Analyzer(solid).IsValid():
+                    raise GeometryError("STEP closed shell cannot form a valid solid")
+                builder.Add(bodies, solid)
+                count += 1
             shells.Next()
         if not count:
             raise GeometryError("STEP model must contain a closed shell")
+        if excluded:
+            self.import_warnings.append(f"Ignored {excluded} open surface shells; matching closed bodies only")
+        loose_faces = TopExp_Explorer(shape, TopAbs_FACE, TopAbs_SHELL)
+        if loose_faces.More():
+            self.import_warnings.append("Ignored standalone surface faces; matching closed bodies only")
+        shape = bodies
+        self.shape = shape
         bounds = Bnd_Box()
         BRepBndLib.AddOptimal_s(shape, bounds, False, False)
         lower, upper = bounds.CornerMin(), bounds.CornerMax()
+        self.bounds_center = tuple((a + b) / 2 for a, b in zip(
+            (lower.X(), lower.Y(), lower.Z()), (upper.X(), upper.Y(), upper.Z())))
         self.diagonal = lower.Distance(upper)
         self.tolerance = max(1e-7, 1e-7 * self.diagonal)
         self._intersector = IntCurvesFace_ShapeIntersector()
         self._intersector.Load(shape, self.tolerance)
+        self._face_intersectors = None
+        self._analytic_faces = set()
         # A solid treats an interior vertex as zero distance. Distance to a
         # compound of faces measures the boundary, including internal hole walls.
         self._faces = []
@@ -201,13 +238,56 @@ class Geometry:
             raise GeometryError(f"Cannot read STEP geometry: {path}")
         shape = reader.OneShape()
         # Validate before transformation so malformed input cannot be masked by a copy.
-        cls(shape)
+        original = cls(shape)
+        if values == [1., 0., 0., 0., 1., 0., 0., 0., 1.] and all(float(v) == 0 for v in translation):
+            # Native-coordinate scans need no deep CAD copy or second topology
+            # validation, which dominate loading time for large assemblies.
+            return original
         transform = gp_Trsf()
         transform.SetValues(
             *[value for i in range(3)
               for value in [*values[3 * i:3 * i + 3], float(translation[i])]]
         )
-        return cls(BRepBuilderAPI_Transform(shape, transform, True).Shape())
+        result = cls(BRepBuilderAPI_Transform(original.shape, transform, True).Shape())
+        result.import_warnings = original.import_warnings + result.import_warnings
+        return result
+
+    def _face_hits(self, line, lower, upper):
+        """Exact per-face retry for kernel failures at analytic surface poles.
+
+        Intersecting an untrimmed support alone is insufficient: classify every
+        result against the bounded face so holes and trimming remain respected.
+        Unknown/nonanalytic failures propagate rather than dropping a face.
+        """
+        if self._face_intersectors is None:
+            self._face_intersectors = []
+            for face in self._faces:
+                tool = IntCurvesFace_ShapeIntersector()
+                tool.Load(face, self.tolerance)
+                self._face_intersectors.append(tool)
+        hits = []
+        for index, (face, tool) in enumerate(zip(self._faces, self._face_intersectors)):
+            if index not in self._analytic_faces:
+                try:
+                    tool.Perform(line, lower, upper)
+                    if not tool.IsDone():
+                        raise GeometryError("Surface intersection did not complete")
+                    hits.extend((tool.WParameter(i), tool.Pnt(i)) for i in range(1, tool.NbPnt() + 1))
+                    continue
+                except Standard_NullObject:
+                    self._analytic_faces.add(index)
+            kind = BRepAdaptor_Surface(face).GetType()
+            if kind not in (GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Cone, GeomAbs_Sphere, GeomAbs_Torus):
+                raise GeometryError(f"Ray intersection failed on face {index} ({kind})")
+            intersection = GeomAPI_IntCS(Geom_Line(line), BRep_Tool.Surface_s(face))
+            if not intersection.IsDone():
+                raise GeometryError(f"Analytic ray intersection failed on face {index}")
+            for i in range(1, intersection.NbPoints() + 1):
+                point = intersection.Point(i)
+                distance = line.Direction().XYZ().Dot(point.XYZ() - line.Location().XYZ())
+                if lower <= distance <= upper and BRepClass_FaceClassifier(face, point, self.tolerance).State() in (TopAbs_IN, TopAbs_ON):
+                    hits.append((distance, point))
+        return hits
 
     def intersections(self, origin, through, forward=True):
         """Intersect bounded faces with a line/ray through two points, in signed order."""
@@ -217,13 +297,23 @@ class Geometry:
         if math.hypot(*direction) == 0:
             raise GeometryError("Ray direction must be nonzero")
         line = gp_Lin(gp_Pnt(*origin), gp_Dir(*direction))
-        self._intersector.Perform(line, 0.0 if forward else -sys.float_info.max, sys.float_info.max)
-        if not self._intersector.IsDone():
-            raise GeometryError("Surface intersection did not complete")
-        hits = sorted([
-            (self._intersector.WParameter(i), self._intersector.Pnt(i))
-            for i in range(1, self._intersector.NbPnt() + 1)
-        ], key=lambda item: item[0])
+        # All boundary points lie within half the box diagonal of its center.
+        # Finite limits avoid overflow without clipping rays from distant origins.
+        bound = math.dist(origin, self.bounds_center) + self.diagonal + self.tolerance
+        lower, upper = (0.0 if forward else -bound), bound
+        if self._face_intersectors is not None:
+            hits = self._face_hits(line, lower, upper)
+        else:
+            try:
+                self._intersector.Perform(line, lower, upper)
+                if not self._intersector.IsDone():
+                    raise GeometryError("Surface intersection did not complete")
+                hits = [(self._intersector.WParameter(i), self._intersector.Pnt(i))
+                        for i in range(1, self._intersector.NbPnt() + 1)]
+            except Standard_NullObject:
+                hits = self._face_hits(line, lower, upper)
+                self.import_warnings.append("Used exact analytic fallback for a CAD ray intersection failure")
+        hits.sort(key=lambda item: item[0])
         points = []
         for distance, point in hits:
             if forward and distance <= self.tolerance:

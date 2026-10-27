@@ -90,6 +90,56 @@ def test_discovery_duplicates_rescan_changes_and_deletions(catalog):
         lib.EXTRACTION_VERSION = monkey_version
 
 
+def test_launch_refresh_retries_failed_files_and_invalidates_old_successes(catalog):
+    library, root, worker = catalog
+    (root / "ready.step").write_text("old success")
+    (root / "failed.step").write_text("old failure")
+    finish(library, library.start("scan"))
+    with library.connect() as db:
+        db.execute("UPDATE files SET version='native-features-1-1'")
+        db.execute("UPDATE features SET version='native-features-1-1'")
+        db.execute("DELETE FROM features WHERE hash=?", (source_hash(root / "failed.step"),))
+        db.execute("UPDATE files SET status='error',error='No usable surface features',cache=NULL,descriptor=NULL WHERE path=?",
+                   (canonical(root / "failed.step"),))
+    worker.calls.clear()
+    job = library.rescan_if_outdated()
+    assert job is not None
+    assert finish(library, job)["status"] == "completed"
+    assert len(worker.calls) == 2
+    assert library.state()["counts"] == {"ready": 2}
+    with library.connect() as db:
+        assert {r[0] for r in db.execute("SELECT version FROM files")} == {lib.EXTRACTION_VERSION}
+    assert library.rescan_if_outdated() is None
+
+
+def test_browse_exposes_import_notes_without_marking_ready_files_failed(catalog):
+    library, root, _ = catalog
+    (root / "mixed.step").write_text("solid and cosmetic shell")
+    finish(library, library.start("scan"))
+    with library.connect() as db:
+        db.execute("UPDATE files SET descriptor=?", (json.dumps({"warnings": ["Ignored 1 open surface shell"]}),))
+    item = library.browse()["items"][0]
+    assert item["status"] == "ready"
+    assert item["warnings"] == ["Ignored 1 open surface shell"]
+
+
+def test_server_startup_automatically_scans_outdated_selected_library(catalog):
+    from fastapi.testclient import TestClient
+    from shapematch_app.server import create_app
+    library, root, worker = catalog
+    (root / "failed.step").write_text("retry me")
+    finish(library, library.start("scan"))
+    with library.connect() as db:
+        db.execute("UPDATE files SET version='old',status='error',error='no centroid'")
+        db.execute("DELETE FROM features")
+    worker.calls.clear()
+    with TestClient(create_app(library, token="test", port=8000)):
+        library.thread.join(10)
+        assert not library.thread.is_alive()
+        assert library.state()["counts"] == {"ready": 1}
+        assert len(worker.calls) == 1
+
+
 def test_inaccessible_subtree_retained(catalog, monkeypatch):
     library, root, _ = catalog
     sub = root / "denied"

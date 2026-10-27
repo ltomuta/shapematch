@@ -141,14 +141,16 @@ def test_boolean_failure_is_distinct_from_empty_difference(overlay, monkeypatch)
     assert data["source"]["triangles"] and data["target"]["triangles"]
 
 
-def test_closed_shell_overlay_remains_available_without_solid_booleans(overlay):
+def test_closed_shell_overlay_uses_promoted_solid_for_booleans(overlay):
     source, target, comparison = overlay
     shell = TopExp_Explorer(source.objectHandle.shape, TopAbs_SHELL).Current()
     source.objectHandle = Geometry(shell)
     data = comparison_payload(source, target, comparison)
     assert data["source"]["triangles"]
     for placement in ("original", "aligned"):
-        assert "solid CAD bodies" in data["boolean"][placement]["error"]
+        assert data["boolean"][placement]["error"] is None
+    # Export reports in the target's native STEP frame (undoing benchmark scale).
+    assert data["boolean"]["aligned"]["regions"]["common"]["volume"] == pytest.approx(1)
 
 
 @pytest.mark.parametrize("value", [-1, float("nan"), float("inf"), float("-inf"), "not-a-distance"])
